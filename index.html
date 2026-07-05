@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>hzzz | main</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700;900&display=swap" rel="stylesheet">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html, body {
+    font-family: 'Space Grotesk', sans-serif;
+    background: #000;
+    color: white;
+    overflow: hidden;
+    height: 100vh;
+    width: 100vw;
+    -webkit-tap-highlight-color: transparent;
+}
+
+#fadeOverlay {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: rgba(0,0,0,0.85);
+    z-index: 50;
+    pointer-events: none;
+    transition: opacity 3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+#fadeOverlay.hidden {
+    opacity: 0;
+}
+
+body::before, body::after {
+    content: '';
+    position: fixed;
+    left: 0; right: 0;
+    height: 90px;
+    z-index: 10;
+    pointer-events: none;
+}
+body::before {
+    top: 0;
+    background: linear-gradient(to bottom, rgba(0,0,0,0.65) 0%, rgba(0,0,0,0.15) 70%, transparent 100%);
+}
+body::after {
+    bottom: 0;
+    background: linear-gradient(to top, rgba(0,0,0,0.65) 0%, rgba(0,0,0,0.15) 70%, transparent 100%);
+}
+
+#glCanvas {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    z-index: 0;
+}
+
+.container {
+    height: 100vh;
+    scroll-snap-type: y mandatory;
+    overflow-y: scroll;
+    scroll-behavior: auto;
+    position: relative;
+    z-index: 5;
+}
+
+.section {
+    height: 100vh;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    scroll-snap-align: start;
+    flex-direction: column;
+    padding: 0 20px;
+    perspective: 1000px;
+}
+
+.hero {
+    text-align: center;
+}
+.hero-text {
+    font-size: clamp(44px, 14vw, 90px);
+    font-weight: 900;
+    letter-spacing: clamp(4px, 2vw, 14px);
+    color: white;
+    text-shadow: 0 4px 30px rgba(0,0,0,0.6), 0 0 60px rgba(255,255,255,0.08);
+    pointer-events: none;
+    text-transform: uppercase;
+    line-height: 1.1;
+    will-change: filter, transform, opacity;
+}
+
+.arrow {
+    font-size: clamp(22px, 5.5vw, 32px);
+    color: rgba(255,255,255,0.52);
+    animation: bounce 2.5s infinite ease-in-out;
+    margin-top: clamp(100px, 22vh, 180px);
+    text-shadow: 0 2px 10px rgba(0,0,0,0.5);
+    pointer-events: none;
+    will-change: filter, transform, opacity;
+}
+@keyframes bounce {
+    0%, 100% { transform: translateY(0); opacity: 0.25; }
+    50% { transform: translateY(14px); opacity: 0.6; }
+}
+
+.second {
+    justify-content: center;
+    gap: 18px;
+}
+
+.links-block {
+    text-align: center;
+    font-size: clamp(13px, 3.2vw, 17px);
+    font-weight: 500;
+    color: rgba(255,255,255,0.9);
+    text-shadow: 0 2px 15px rgba(0,0,0,0.7);
+    letter-spacing: 0.5px;
+    will-change: filter, transform, opacity;
+}
+
+.links-block a {
+    color: inherit;
+    text-decoration: none;
+    pointer-events: auto;
+    transition: all 0.25s ease;
+    border-bottom: 1px solid rgba(255,255,255,0.15);
+    padding-bottom: 1px;
+}
+.links-block a:hover {
+    opacity: 0.6;
+    border-bottom-color: rgba(255,255,255,0.5);
+}
+
+.divider {
+    font-size: clamp(10px, 2.5vw, 13px);
+    font-weight: 600;
+    letter-spacing: 3px;
+    color: rgba(255,255,255,0.35);
+    text-transform: uppercase;
+    margin: 8px 0;
+    pointer-events: none;
+}
+
+.link-row {
+    line-height: 2.2;
+}
+
+.bottom-text {
+    position: fixed;
+    bottom: clamp(18px, 3vh, 40px);
+    left: 50%;
+    font-size: clamp(10px, 2.5vw, 13px);
+    font-weight: 500;
+    letter-spacing: clamp(2px, 1vw, 5px);
+    color: rgba(255,255,255,0.4);
+    text-shadow: 0 2px 10px rgba(0,0,0,0.5);
+    text-transform: uppercase;
+    pointer-events: none;
+    z-index: 12;
+    white-space: nowrap;
+    will-change: transform, opacity;
+}
+
+.container::-webkit-scrollbar { display: none; }
+.container { -ms-overflow-style: none; scrollbar-width: none; }
+</style>
+</head>
+<body>
+
+<div id="fadeOverlay"></div>
+<canvas id="glCanvas"></canvas>
+
+<div class="container" id="scroller">
+    <section class="section hero" id="slide1">
+        <div class="hero-text" id="heroText">hzzz</div>
+        <div class="arrow" id="heroArrow">↓</div>
+    </section>
+
+    <section class="section second" id="slide2">
+        <div class="links-block" id="linksText">
+            <div class="divider">— network —</div>
+            <div class="link-row">D.M. — <a href="https://t.me/EXOSEO" target="_blank">@EXOSEO</a></div>
+            <div class="link-row">TIKTOK — <a href="https://tiktok.com/@hzzz6969" target="_blank">@HZZZ6969</a></div>
+            <div class="link-row">MAX — <a href="https://hzzz.fun/max" target="_blank">+7 912 421 ****</a></div>
+
+            <div class="divider">— projects —</div>
+            <div class="link-row">VPN — <a href="https://t.me/FVNETBOT" target="_blank">@FVNETBOT</a></div>
+            <div class="link-row">TG PROXY — <a href="https://hzzz.fun/proxy" target="_blank">hzzz.fun/proxy</a></div>
+
+            <div class="divider">— other —</div>
+            <div class="link-row">TON — <a href="ton://transfer/UQBIsbxjOu2KVjcSNi5EIOzK-BHMcnHhTcCcpWBzh3chT6aU">fuckyoupayme.ton</a></div>
+        </div>
+    </section>
+</div>
+
+<div class="bottom-text" id="bottomText">okak | hzzz.fun | 2026</div>
+
+<script>
+const canvas = document.getElementById('glCanvas');
+const isMobile = window.innerWidth < 768 || /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+const dpr = Math.min(window.devicePixelRatio, isMobile ? 1.25 : 2);
+
+const gl = canvas.getContext('webgl2', { alpha: false, antialias: false, premultipliedAlpha: false });
+if (!gl) {
+    document.body.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100vh;color:#fff;font-family:sans-serif;">WebGL2 not supported</div>';
+    throw new Error('WebGL2 not supported');
+}
+
+const quadVerts = new Float32Array([-1,-1, 1,-1, -1,1, -1,1, 1,-1, 1,1]);
+const quadBuf = gl.createBuffer();
+gl.bindBuffer(gl.ARRAY_BUFFER, quadBuf);
+gl.bufferData(gl.ARRAY_BUFFER, quadVerts, gl.STATIC_DRAW);
+
+const quadVAO = gl.createVertexArray();
+gl.bindVertexArray(quadVAO);
+gl.enableVertexAttribArray(0);
+gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 0, 0);
+gl.bindVertexArray(null);
+
+function compile(type, src) {
+    const s = gl.createShader(type);
+    gl.shaderSource(s, src);
+    gl.compileShader(s);
+    if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) {
+        console.error('Shader compile error:', gl.getShaderInfoLog(s));
+        return null;
+    }
+    return s;
+}
+function program(vs, fs) {
+    const p = gl.createProgram();
+    gl.attachShader(p, compile(gl.VERTEX_SHADER, vs));
+    gl.attachShader(p, compile(gl.FRAGMENT_SHADER, fs));
+    gl.linkProgram(p);
+    if (!gl.getProgramParameter(p, gl.LINK_STATUS)) {
+        console.error('Program link error:', gl.getProgramInfoLog(p));
+    }
+    return p;
+}
+
+const vertSrc = `#version 300 es
+in vec2 a_position;
+out vec2 v_uv;
+void main(){
+    v_uv = a_position * 0.5 + 0.5;
+    gl_Position = vec4(a_position, 0.0, 1.0);
+}`;
+
+const bgFrag = `#version 300 es
+precision highp float;
+in vec2 v_uv;
+out vec4 fragColor;
+uniform float u_time;
+uniform vec2 u_resolution;
+
+float hash(vec2 p) {
+    vec3 p3 = fract(vec3(p.xyx) * 0.1031);
+    p3 += dot(p3, p3.yzx + 33.33);
+    return fract((p3.x + p3.y) * p3.z);
+}
+
+float noise(vec2 p) {
+    vec2 i = floor(p);
+    vec2 f = fract(p);
+    f = f * f * (3.0 - 2.0 * f);
+    float a = hash(i);
+    float b = hash(i + vec2(1.0, 0.0));
+    float c = hash(i + vec2(0.0, 1.0));
+    float d = hash(i + vec2(1.0, 1.0));
+    return mix(mix(a, b, f.x), mix(c, d, f.x), f.y);
+}
+
+float fbm(vec2 p) {
+    float v = 0.0;
+    float a = 0.5;
+    for (int i = 0; i < 4; i++) {
+        v += a * noise(p);
+        p *= 2.03;
+        a *= 0.5;
+    }
+    return v;
+}
+
+const vec3 blobColors[4] = vec3[](
+    vec3(0.95, 0.45, 0.08),
+    vec3(0.65, 0.12, 0.75),
+    vec3(0.85, 0.25, 0.15),
+    vec3(0.35, 0.08, 0.55)
+);
+
+vec3 scene(vec2 p, float t) {
+    vec3 c = vec3(0.02, 0.01, 0.015);
+
+    for(int i=0; i<4; i++){
+        float fi = float(i);
+        float tt = t * (0.7 + fi * 0.25) + fi * 3.927;
+        vec2 pos = vec2(
+            sin(tt * 0.7 + fi * 1.9) * 0.65 + cos(tt * 0.35) * 0.25,
+            cos(tt * 0.5 + fi * 2.4) * 0.45 + sin(tt * 0.3) * 0.2
+        );
+        float dist = length(p - pos);
+        float size = 0.32 + fi * 0.06;
+        float blob = exp(-dist * dist / (size * size)) * 0.45;
+        c += blobColors[i] * blob;
+    }
+
+    for(int i=0; i<6; i++){
+        float fi = float(i);
+        float tt = t * 0.55 + fi * 1.047;
+        vec2 pos = vec2(
+            sin(tt * 0.85 + fi * 2.3) * 0.55,
+            cos(tt * 0.65 + fi * 1.5) * 0.45
+        );
+        float dist = length(p - pos);
+        float size = 0.035 + mod(fi, 3.0) * 0.012;
+        float glow = exp(-dist * dist / (size * size * 0.35)) * 0.3;
+        vec3 pc = mix(
+            vec3(0.9, 0.5, 0.1),
+            vec3(0.5, 0.15, 0.7),
+            sin(fi * 1.3) * 0.5 + 0.5
+        );
+        c += pc * glow;
+    }
+
+    for(int i=0; i<12; i++){
+        float fi = float(i);
+        vec2 starPos = vec2(
+            mod(hash(vec2(fi, 0.0)) * 4.0 - 2.0 + t * 0.018 * (mod(fi, 3.0) - 1.0), 4.0) - 2.0,
+            mod(hash(vec2(0.0, fi)) * 4.0 - 2.0 + t * 0.012 * (mod(fi + 1.0, 3.0) - 1.0), 4.0) - 2.0
+        );
+        float dist = length(p - starPos);
+        float twinkle = 0.5 + 0.5 * sin(u_time * 2.5 + fi * 3.5);
+        float size = 0.005 + hash(vec2(fi, fi)) * 0.007;
+        float glow = exp(-dist * dist / (size * size * 0.2)) * 0.18 * twinkle;
+        vec3 sc = vec3(1.0, 0.85, 0.6);
+        c += sc * glow;
+    }
+
+    return c;
+}
+
+void main(){
+    vec2 uv = v_uv;
+    vec2 p = uv * 2.0 - 1.0;
+    p.x *= u_resolution.x / u_resolution.y;
+    float t = u_time * 0.12;
+
+    vec3 col = scene(p, t);
+
+    vec3 acc = vec3(0.0);
+    float samples = 5.0;
+    float strength = 0.022 * smoothstep(0.0, 0.9, length(p));
+    for(float i=0.0; i<samples; i+=1.0){
+        float fi = i / samples;
+        acc += scene(p * (1.0 - fi * strength), t);
+    }
+    col = mix(col, acc / samples, 0.35);
+
+    float grain = (hash(uv * 500.0 + u_time) - 0.5) * 0.015;
+    col += grain;
+
+    float vig = 1.0 - dot(p, p) * 0.1;
+    col *= max(vig, 0.25);
+
+    col = pow(col, vec3(0.92, 0.95, 1.0));
+    col = col / (1.0 + col * 0.25);
+
+    fragColor = vec4(col, 1.0);
+}`;
+
+const bgProg = program(vertSrc, bgFrag);
+const bgLocs = {
+    a_position: gl.getAttribLocation(bgProg, 'a_position'),
+    u_time: gl.getUniformLocation(bgProg, 'u_time'),
+    u_resolution: gl.getUniformLocation(bgProg, 'u_resolution')
+};
+
+let width, height;
+function resize() {
+    const w = Math.floor(window.innerWidth * dpr);
+    const h = Math.floor(window.innerHeight * dpr);
+    canvas.width = w; canvas.height = h;
+    canvas.style.width = window.innerWidth + 'px';
+    canvas.style.height = window.innerHeight + 'px';
+    width = w; height = h;
+}
+window.addEventListener('resize', resize);
+resize();
+
+const overlay = document.getElementById('fadeOverlay');
+const scroller = document.getElementById('scroller');
+const heroText = document.getElementById('heroText');
+const heroArrow = document.getElementById('heroArrow');
+const linksText = document.getElementById('linksText');
+const bottomText = document.getElementById('bottomText');
+const slide2 = document.getElementById('slide2');
+
+const state = {
+    px: 0,
+    py: 0,
+    tpx: 0,
+    tpy: 0,
+    autoDone: false,
+    autoStart: 0,
+    autoActive: false
+};
+
+document.addEventListener('mousemove', e => {
+    state.tpx = (e.clientX / window.innerWidth - 0.5) * 2;
+    state.tpy = (e.clientY / window.innerHeight - 0.5) * 2;
+});
+
+let gBase = null;
+function onGyro(e) {
+    if (e.gamma == null || e.beta == null) return;
+    if (!gBase) {
+        gBase = {g: e.gamma, b: e.beta};
+    } else {
+        gBase.g += (e.gamma - gBase.g) * 0.12;
+        gBase.b += (e.beta - gBase.b) * 0.12;
+    }
+    const dx = (e.gamma - gBase.g) / 45;
+    const dy = (e.beta - gBase.b) / 45;
+    state.tpx = Math.max(-1, Math.min(1, dx));
+    state.tpy = Math.max(-1, Math.min(1, dy));
+}
+
+function bindGyro() {
+    window.addEventListener('deviceorientation', onGyro);
+}
+
+if (window.DeviceOrientationEvent) {
+    if (typeof DeviceOrientationEvent.requestPermission === 'function') {
+        const req = () => {
+            DeviceOrientationEvent.requestPermission().then(r => {
+                if (r === 'granted') bindGyro();
+            }).catch(() => {});
+        };
+        document.addEventListener('click', req, {once: true});
+        document.addEventListener('touchstart', req, {once: true});
+    } else {
+        bindGyro();
+    }
+}
+
+const targetY = slide2.offsetTop;
+const startY = scroller.scrollTop;
+const distance = targetY - startY;
+const duration = 1400;
+
+function easeInOutCubic(t) {
+    return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+}
+
+setTimeout(() => {
+    overlay.classList.add('hidden');
+}, 100);
+
+setTimeout(() => {
+    scroller.style.scrollSnapType = 'none';
+    state.autoStart = performance.now();
+    state.autoActive = true;
+}, 1000);
+
+const P_LERP = 0.22;
+const P_MAX = 5;
+
+function tick(now) {
+    const time = now * 0.001;
+
+    if (state.autoActive && !state.autoDone) {
+        const elapsed = now - state.autoStart;
+        const progress = Math.min(elapsed / duration, 1);
+        const eased = easeInOutCubic(progress);
+        scroller.scrollTop = startY + distance * eased;
+        if (progress >= 1) {
+            state.autoDone = true;
+            scroller.scrollTop = targetY;
+            scroller.style.scrollSnapType = 'y mandatory';
+            void scroller.offsetHeight;
+        }
+    }
+
+    state.px += (state.tpx - state.px) * P_LERP;
+    state.py += (state.tpy - state.py) * P_LERP;
+
+    const scrollY = scroller.scrollTop;
+    const vh = window.innerHeight;
+    const pBlur = Math.abs(state.px) * 0.6 + Math.abs(state.py) * 0.35;
+    const pDark = Math.abs(state.px) * 0.08 + Math.abs(state.py) * 0.05;
+
+    const ox = state.px * P_MAX;
+    const oy = state.py * P_MAX;
+
+    if (scrollY < vh) {
+        const p = Math.min(scrollY / (vh * 0.6), 1);
+        const blur = p * 12;
+        const scale = 1 + p * 0.15;
+        const opacity = 1 - p * 0.9;
+        const tBlur = blur + pBlur;
+        const tOp = Math.max(0, opacity - pDark);
+
+        heroText.style.filter = `blur(${tBlur}px)`;
+        heroText.style.transform = `scale(${scale}) translate(${ox}px, ${oy}px)`;
+        heroText.style.opacity = tOp;
+
+        heroArrow.style.filter = `blur(${tBlur * 0.8}px)`;
+        heroArrow.style.transform = `scale(${scale}) translate(${ox}px, ${oy + p * 20}px)`;
+        heroArrow.style.opacity = tOp * 0.5;
+    } else {
+        heroText.style.filter = 'blur(12px)';
+        heroText.style.transform = `scale(1.15) translate(${ox}px, ${oy}px)`;
+        heroText.style.opacity = '0';
+
+        heroArrow.style.filter = 'blur(10px)';
+        heroArrow.style.transform = `scale(1.1) translate(${ox}px, ${oy + 20}px)`;
+        heroArrow.style.opacity = '0';
+    }
+
+    const slide2Progress = Math.max(0, (scrollY - vh * 0.3) / (vh * 0.7));
+    const p2 = Math.min(slide2Progress, 1);
+    const blur2 = (1 - p2) * 12;
+    const scale2 = 0.85 + p2 * 0.15;
+    const opacity2 = p2;
+    const tBlur2 = blur2 + pBlur;
+    const tOp2 = Math.max(0, opacity2 - pDark);
+
+    linksText.style.filter = `blur(${tBlur2}px)`;
+    linksText.style.transform = `scale(${scale2}) translate(${ox}px, ${oy}px)`;
+    linksText.style.opacity = tOp2;
+
+    bottomText.style.transform = `translate(-50%, 0) translate(${ox}px, ${oy}px)`;
+    bottomText.style.opacity = Math.max(0.2, 0.4 - pDark);
+
+    gl.viewport(0, 0, width, height);
+    gl.clearColor(0.015, 0.008, 0.01, 1.0);
+    gl.clear(gl.COLOR_BUFFER_BIT);
+    gl.useProgram(bgProg);
+    gl.uniform1f(bgLocs.u_time, time);
+    gl.uniform2f(bgLocs.u_resolution, width, height);
+    gl.bindVertexArray(quadVAO);
+    gl.drawArrays(gl.TRIANGLES, 0, 6);
+
+    requestAnimationFrame(tick);
+}
+
+requestAnimationFrame(tick);
+</script>
+
+</body>
+</html>
