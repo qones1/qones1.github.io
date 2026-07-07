@@ -4,6 +4,20 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>hzzz | main</title>
+<meta name="description" content="hzzz bio & links | био & ссылки">
+<meta name="keywords" content="hzzz, bio, links, био, ссылки, contacts, контакты, telegram, tiktok, vpn">
+<meta name="author" content="hzzz">
+<meta name="robots" content="index, follow">
+<meta property="og:title" content="hzzz | main">
+<meta property="og:description" content="hzzz bio & links | био & ссылки">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://hzzz.fun">
+<meta property="og:site_name" content="hzzz.fun">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="hzzz | main">
+<meta name="twitter:description" content="hzzz bio & links | био & ссылки">
+<meta name="theme-color" content="#000000">
+<link rel="canonical" href="https://hzzz.fun">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700;900&display=swap" rel="stylesheet">
@@ -432,7 +446,9 @@ function bindGyro() {
     window.addEventListener('deviceorientation', onGyro);
 }
 
-if (window.DeviceOrientationEvent) {
+const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+
+if (!isIOS && window.DeviceOrientationEvent) {
     if (typeof DeviceOrientationEvent.requestPermission === 'function') {
         const req = () => {
             DeviceOrientationEvent.requestPermission().then(r => {
