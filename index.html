@@ -9,13 +9,9 @@
 <meta name="author" content="hzzz">
 <meta name="robots" content="index, follow">
 <meta property="og:title" content="hzzz | main">
-<meta property="og:description" content="hzzz bio & links | био & ссылки">
-<meta property="og:type" content="website">
 <meta property="og:url" content="https://hzzz.fun">
 <meta property="og:site_name" content="hzzz.fun">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="hzzz | main">
-<meta name="twitter:description" content="hzzz bio & links | био & ссылки">
 <meta name="theme-color" content="#000000">
 <link rel="canonical" href="https://hzzz.fun">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -31,6 +27,7 @@ html, body {
     height: 100vh;
     width: 100vw;
     -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
 }
 
 #fadeOverlay {
@@ -70,6 +67,33 @@ body::after {
     z-index: 0;
 }
 
+@keyframes bgFlash {
+    0% { filter: blur(0px) brightness(1); }
+    50% { filter: blur(3px) brightness(1.25); }
+    100% { filter: blur(0px) brightness(1); }
+}
+#glCanvas.flash-bg {
+    animation: bgFlash 1s ease forwards;
+}
+
+@keyframes textFlash {
+    0% { filter: blur(0px); }
+    50% { filter: blur(2px) brightness(1.3); }
+    100% { filter: blur(0px); }
+}
+.flash-text {
+    animation: textFlash 1s ease forwards;
+}
+
+@keyframes linkFlash {
+    0% { filter: blur(0px); }
+    50% { filter: blur(2px) brightness(1.4); }
+    100% { filter: blur(0px); }
+}
+.flash-link {
+    animation: linkFlash 0.6s ease forwards;
+}
+
 .container {
     height: 100vh;
     scroll-snap-type: y mandatory;
@@ -77,6 +101,7 @@ body::after {
     scroll-behavior: auto;
     position: relative;
     z-index: 5;
+    overscroll-behavior-y: none;
 }
 
 .section {
@@ -111,14 +136,18 @@ body::after {
     font-size: clamp(22px, 5.5vw, 32px);
     color: rgba(255,255,255,0.52);
     animation: bounce 2.5s infinite ease-in-out;
-    margin-top: clamp(100px, 22vh, 180px);
     text-shadow: 0 2px 10px rgba(0,0,0,0.5);
     pointer-events: none;
     will-change: filter, transform, opacity;
+    display: block;
 }
 @keyframes bounce {
     0%, 100% { transform: translateY(0); opacity: 0.25; }
     50% { transform: translateY(14px); opacity: 0.6; }
+}
+
+.arrow-down {
+    margin-top: clamp(100px, 22vh, 180px);
 }
 
 .second {
@@ -143,6 +172,7 @@ body::after {
     transition: all 0.25s ease;
     border-bottom: 1px solid rgba(255,255,255,0.15);
     padding-bottom: 1px;
+    display: inline-block;
 }
 .links-block a:hover {
     opacity: 0.6;
@@ -191,7 +221,7 @@ body::after {
 <div class="container" id="scroller">
     <section class="section hero" id="slide1">
         <div class="hero-text" id="heroText">hzzz</div>
-        <div class="arrow" id="heroArrow">↓</div>
+        <div class="arrow arrow-down" id="heroArrow">↓</div>
     </section>
 
     <section class="section second" id="slide2">
@@ -263,7 +293,36 @@ void main(){
     gl_Position = vec4(a_position, 0.0, 1.0);
 }`;
 
-const bgFrag = `#version 300 es
+function getFragSrc(themeIdx) {
+    let blobC, glowC1, glowC2, starC, baseC, powC, tone;
+
+    if (themeIdx === 0) {
+        blobC = `vec3[](vec3(0.95,0.45,0.08),vec3(0.65,0.12,0.75),vec3(0.85,0.25,0.15),vec3(0.35,0.08,0.55))`;
+        glowC1 = `vec3(0.9,0.5,0.1)`;
+        glowC2 = `vec3(0.5,0.15,0.7)`;
+        starC = `vec3(1.0,0.85,0.6)`;
+        baseC = `vec3(0.02,0.01,0.015)`;
+        powC = `vec3(0.92,0.95,1.0)`;
+        tone = `vec3(0.015,0.008,0.01)`;
+    } else if (themeIdx === 1) {
+        blobC = `vec3[](vec3(0.15,0.45,0.95),vec3(0.08,0.25,0.75),vec3(0.12,0.55,0.85),vec3(0.05,0.15,0.45))`;
+        glowC1 = `vec3(0.1,0.4,0.9)`;
+        glowC2 = `vec3(0.15,0.3,0.7)`;
+        starC = `vec3(0.6,0.8,1.0)`;
+        baseC = `vec3(0.01,0.015,0.03)`;
+        powC = `vec3(1.0,0.98,0.95)`;
+        tone = `vec3(0.008,0.012,0.02)`;
+    } else {
+        blobC = `vec3[](vec3(0.95,0.25,0.05),vec3(0.85,0.15,0.08),vec3(0.75,0.35,0.05),vec3(0.55,0.08,0.05))`;
+        glowC1 = `vec3(0.95,0.45,0.1)`;
+        glowC2 = `vec3(0.85,0.2,0.05)`;
+        starC = `vec3(1.0,0.75,0.5)`;
+        baseC = `vec3(0.03,0.01,0.005)`;
+        powC = `vec3(0.95,0.92,0.9)`;
+        tone = `vec3(0.02,0.006,0.004)`;
+    }
+
+    return `#version 300 es
 precision highp float;
 in vec2 v_uv;
 out vec4 fragColor;
@@ -298,15 +357,10 @@ float fbm(vec2 p) {
     return v;
 }
 
-const vec3 blobColors[4] = vec3[](
-    vec3(0.95, 0.45, 0.08),
-    vec3(0.65, 0.12, 0.75),
-    vec3(0.85, 0.25, 0.15),
-    vec3(0.35, 0.08, 0.55)
-);
+const vec3 blobColors[4] = ${blobC};
 
 vec3 scene(vec2 p, float t) {
-    vec3 c = vec3(0.02, 0.01, 0.015);
+    vec3 c = ${baseC};
 
     for(int i=0; i<4; i++){
         float fi = float(i);
@@ -332,8 +386,8 @@ vec3 scene(vec2 p, float t) {
         float size = 0.035 + mod(fi, 3.0) * 0.012;
         float glow = exp(-dist * dist / (size * size * 0.35)) * 0.3;
         vec3 pc = mix(
-            vec3(0.9, 0.5, 0.1),
-            vec3(0.5, 0.15, 0.7),
+            ${glowC1},
+            ${glowC2},
             sin(fi * 1.3) * 0.5 + 0.5
         );
         c += pc * glow;
@@ -349,7 +403,7 @@ vec3 scene(vec2 p, float t) {
         float twinkle = 0.5 + 0.5 * sin(u_time * 2.5 + fi * 3.5);
         float size = 0.005 + hash(vec2(fi, fi)) * 0.007;
         float glow = exp(-dist * dist / (size * size * 0.2)) * 0.18 * twinkle;
-        vec3 sc = vec3(1.0, 0.85, 0.6);
+        vec3 sc = ${starC};
         c += sc * glow;
     }
 
@@ -379,18 +433,68 @@ void main(){
     float vig = 1.0 - dot(p, p) * 0.1;
     col *= max(vig, 0.25);
 
-    col = pow(col, vec3(0.92, 0.95, 1.0));
+    float edgeDist = length(p);
+    float dof = smoothstep(0.4, 1.4, edgeDist) * 0.18;
+    col = mix(col, col * 0.7, dof);
+
+    col = pow(col, ${powC});
     col = col / (1.0 + col * 0.25);
 
     fragColor = vec4(col, 1.0);
 }`;
+}
 
-const bgProg = program(vertSrc, bgFrag);
-const bgLocs = {
-    a_position: gl.getAttribLocation(bgProg, 'a_position'),
-    u_time: gl.getUniformLocation(bgProg, 'u_time'),
-    u_resolution: gl.getUniformLocation(bgProg, 'u_resolution')
-};
+let currentTheme = 0;
+const HOURS_12 = 12 * 60 * 60 * 1000;
+
+function getTheme() {
+    try {
+        const saved = localStorage.getItem('hzzz_theme');
+        const lastVisit = localStorage.getItem('hzzz_last_visit');
+        const now = Date.now();
+
+        if (lastVisit) {
+            const elapsed = now - parseInt(lastVisit);
+            if (elapsed > HOURS_12) {
+                localStorage.setItem('hzzz_theme', '0');
+                localStorage.setItem('hzzz_last_visit', now.toString());
+                return 0;
+            }
+        }
+
+        localStorage.setItem('hzzz_last_visit', now.toString());
+
+        if (saved !== null) {
+            const idx = parseInt(saved);
+            if (!isNaN(idx) && idx >= 0 && idx <= 2) {
+                const next = (idx + 1) % 3;
+                localStorage.setItem('hzzz_theme', next.toString());
+                return next;
+            }
+        }
+
+        localStorage.setItem('hzzz_theme', '1');
+        return 0;
+    } catch(e) {
+        return 0;
+    }
+}
+
+currentTheme = getTheme();
+
+let bgProg, bgLocs;
+function rebuildShader() {
+    if (bgProg) {
+        gl.deleteProgram(bgProg);
+    }
+    bgProg = program(vertSrc, getFragSrc(currentTheme));
+    bgLocs = {
+        a_position: gl.getAttribLocation(bgProg, 'a_position'),
+        u_time: gl.getUniformLocation(bgProg, 'u_time'),
+        u_resolution: gl.getUniformLocation(bgProg, 'u_resolution')
+    };
+}
+rebuildShader();
 
 let width, height;
 function resize() {
@@ -422,10 +526,12 @@ const state = {
     autoActive: false
 };
 
-document.addEventListener('mousemove', e => {
-    state.tpx = (e.clientX / window.innerWidth - 0.5) * 2;
-    state.tpy = (e.clientY / window.innerHeight - 0.5) * 2;
-});
+if (!isMobile) {
+    document.addEventListener('mousemove', e => {
+        state.tpx = (e.clientX / window.innerWidth - 0.5) * 2;
+        state.tpy = (e.clientY / window.innerHeight - 0.5) * 2;
+    });
+}
 
 let gBase = null;
 function onGyro(e) {
@@ -471,6 +577,10 @@ function easeInOutCubic(t) {
     return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
 }
 
+function easeOutCubic(t) {
+    return 1 - Math.pow(1 - t, 3);
+}
+
 setTimeout(() => {
     overlay.classList.add('hidden');
 }, 100);
@@ -483,9 +593,103 @@ setTimeout(() => {
 
 const P_LERP = 0.22;
 const P_MAX = 5;
+const pageStart = performance.now();
+const INTRO_DURATION = 1000;
+
+let rubberOffset = 0;
+let rubberVelocity = 0;
+let isRubbering = false;
+let rubberStartY = 0;
+let lastTouchY = 0;
+
+scroller.addEventListener('touchstart', e => {
+    if (e.touches.length !== 1) return;
+    lastTouchY = e.touches[0].clientY;
+    rubberStartY = e.touches[0].clientY;
+    isRubbering = false;
+    rubberVelocity = 0;
+}, {passive: true});
+
+scroller.addEventListener('touchmove', e => {
+    if (e.touches.length !== 1) return;
+    const y = e.touches[0].clientY;
+    const delta = y - lastTouchY;
+    lastTouchY = y;
+
+    const scrollY = scroller.scrollTop;
+    const maxScroll = scroller.scrollHeight - scroller.clientHeight;
+
+    if (scrollY <= 0 && delta > 0) {
+        isRubbering = true;
+        rubberOffset += delta * 0.4;
+        rubberOffset = Math.min(rubberOffset, 180);
+        e.preventDefault();
+    } else if (scrollY >= maxScroll && delta < 0) {
+        isRubbering = true;
+        rubberOffset += delta * 0.4;
+        rubberOffset = Math.max(rubberOffset, -180);
+        e.preventDefault();
+    } else {
+        isRubbering = false;
+        rubberOffset = 0;
+    }
+
+    if (isRubbering) {
+        scroller.style.transform = `translateY(${rubberOffset}px)`;
+        scroller.style.transition = 'none';
+    }
+}, {passive: false});
+
+function releaseRubber() {
+    if (!isRubbering) return;
+    isRubbering = false;
+    scroller.style.transition = 'transform 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
+    scroller.style.transform = 'translateY(0px)';
+    setTimeout(() => {
+        scroller.style.transition = '';
+        scroller.style.transform = '';
+        rubberOffset = 0;
+    }, 500);
+}
+
+scroller.addEventListener('touchend', releaseRubber, {passive: true});
+scroller.addEventListener('touchcancel', releaseRubber, {passive: true});
+
+let wheelRubberOffset = 0;
+let wheelRubbering = false;
+let wheelTimeout = null;
+
+scroller.addEventListener('wheel', e => {
+    const scrollY = scroller.scrollTop;
+    const maxScroll = scroller.scrollHeight - scroller.clientHeight;
+
+    if ((scrollY <= 0 && e.deltaY < 0) || (scrollY >= maxScroll && e.deltaY > 0)) {
+        e.preventDefault();
+        wheelRubbering = true;
+        wheelRubberOffset += e.deltaY * 0.3;
+        wheelRubberOffset = Math.max(-120, Math.min(120, wheelRubberOffset));
+        scroller.style.transform = `translateY(${-wheelRubberOffset}px)`;
+        scroller.style.transition = 'none';
+
+        clearTimeout(wheelTimeout);
+        wheelTimeout = setTimeout(() => {
+            wheelRubbering = false;
+            scroller.style.transition = 'transform 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
+            scroller.style.transform = 'translateY(0px)';
+            setTimeout(() => {
+                scroller.style.transition = '';
+                scroller.style.transform = '';
+                wheelRubberOffset = 0;
+            }, 500);
+        }, 80);
+    }
+}, {passive: false});
 
 function tick(now) {
     const time = now * 0.001;
+    const introElapsed = now - pageStart;
+    const introP = Math.min(introElapsed / INTRO_DURATION, 1);
+    const introEase = easeOutCubic(introP);
 
     if (state.autoActive && !state.autoDone) {
         const elapsed = now - state.autoStart;
@@ -511,21 +715,29 @@ function tick(now) {
     const ox = state.px * P_MAX;
     const oy = state.py * P_MAX;
 
+    const introTextY = (1 - introEase) * -55;
+    const introTextBlur = (1 - introEase) * 10;
+    const introArrowY = (1 - introEase) * 45;
+    const introArrowBlur = (1 - introEase) * 7;
+
     if (scrollY < vh) {
         const p = Math.min(scrollY / (vh * 0.6), 1);
         const blur = p * 12;
         const scale = 1 + p * 0.15;
         const opacity = 1 - p * 0.9;
-        const tBlur = blur + pBlur;
-        const tOp = Math.max(0, opacity - pDark);
+        const tBlur = blur + pBlur + introTextBlur;
+        const tOp = Math.max(0, opacity - pDark) * introEase;
 
         heroText.style.filter = `blur(${tBlur}px)`;
-        heroText.style.transform = `scale(${scale}) translate(${ox}px, ${oy}px)`;
+        heroText.style.transform = `scale(${scale}) translate(${ox}px, ${oy + introTextY}px)`;
         heroText.style.opacity = tOp;
 
-        heroArrow.style.filter = `blur(${tBlur * 0.8}px)`;
-        heroArrow.style.transform = `scale(${scale}) translate(${ox}px, ${oy + p * 20}px)`;
-        heroArrow.style.opacity = tOp * 0.5;
+        const aBlur = blur * 0.8 + pBlur + introArrowBlur;
+        const aOp = Math.max(0, opacity - pDark) * 0.5 * introEase;
+
+        heroArrow.style.filter = `blur(${aBlur}px)`;
+        heroArrow.style.transform = `scale(${scale}) translate(${ox}px, ${oy + p * 20 + introArrowY}px)`;
+        heroArrow.style.opacity = aOp;
     } else {
         heroText.style.filter = 'blur(12px)';
         heroText.style.transform = `scale(1.15) translate(${ox}px, ${oy}px)`;
@@ -548,11 +760,17 @@ function tick(now) {
     linksText.style.transform = `scale(${scale2}) translate(${ox}px, ${oy}px)`;
     linksText.style.opacity = tOp2;
 
-    bottomText.style.transform = `translate(-50%, 0) translate(${ox}px, ${oy}px)`;
+    bottomText.style.transform = `translate(-50%, 0)`;
     bottomText.style.opacity = Math.max(0.2, 0.4 - pDark);
 
     gl.viewport(0, 0, width, height);
-    gl.clearColor(0.015, 0.008, 0.01, 1.0);
+    const clearColors = [
+        [0.015, 0.008, 0.01],
+        [0.008, 0.012, 0.02],
+        [0.02, 0.006, 0.004]
+    ];
+    const cc = clearColors[currentTheme];
+    gl.clearColor(cc[0], cc[1], cc[2], 1.0);
     gl.clear(gl.COLOR_BUFFER_BIT);
     gl.useProgram(bgProg);
     gl.uniform1f(bgLocs.u_time, time);
@@ -564,6 +782,58 @@ function tick(now) {
 }
 
 requestAnimationFrame(tick);
+
+function getTextParent(el) {
+    return el.closest('.hero-text, .arrow, .links-block, .bottom-text');
+}
+
+let lastTapTime = 0;
+let lastTapEl = null;
+
+document.addEventListener('touchend', e => {
+    const now = Date.now();
+    const textEl = getTextParent(e.target);
+    const actingEl = textEl || e.target;
+    if (now - lastTapTime < 350 && lastTapEl === actingEl) {
+        if (textEl) {
+            textEl.classList.remove('flash-text');
+            void textEl.offsetWidth;
+            textEl.classList.add('flash-text');
+            setTimeout(() => textEl.classList.remove('flash-text'), 1000);
+        } else {
+            canvas.classList.remove('flash-bg');
+            void canvas.offsetWidth;
+            canvas.classList.add('flash-bg');
+            setTimeout(() => canvas.classList.remove('flash-bg'), 1000);
+        }
+    }
+    lastTapTime = now;
+    lastTapEl = actingEl;
+}, {passive: true});
+
+document.addEventListener('dblclick', e => {
+    const textEl = getTextParent(e.target);
+    if (textEl) {
+        textEl.classList.remove('flash-text');
+        void textEl.offsetWidth;
+        textEl.classList.add('flash-text');
+        setTimeout(() => textEl.classList.remove('flash-text'), 1000);
+    } else {
+        canvas.classList.remove('flash-bg');
+        void canvas.offsetWidth;
+        canvas.classList.add('flash-bg');
+        setTimeout(() => canvas.classList.remove('flash-bg'), 1000);
+    }
+});
+
+document.querySelectorAll('.links-block a').forEach(a => {
+    a.addEventListener('click', function(e) {
+        this.classList.remove('flash-link');
+        void this.offsetWidth;
+        this.classList.add('flash-link');
+        setTimeout(() => this.classList.remove('flash-link'), 600);
+    });
+});
 </script>
 
 </body>
