@@ -9,9 +9,13 @@
 <meta name="author" content="hzzz">
 <meta name="robots" content="index, follow">
 <meta property="og:title" content="hzzz | main">
+<meta property="og:description" content="hzzz bio & links | био & ссылки">
+<meta property="og:type" content="website">
 <meta property="og:url" content="https://hzzz.fun">
 <meta property="og:site_name" content="hzzz.fun">
 <meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="hzzz | main">
+<meta name="twitter:description" content="hzzz bio & links | био & ссылки">
 <meta name="theme-color" content="#000000">
 <link rel="canonical" href="https://hzzz.fun">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -101,7 +105,6 @@ body::after {
     scroll-behavior: auto;
     position: relative;
     z-index: 5;
-    overscroll-behavior-y: none;
 }
 
 .section {
@@ -150,9 +153,14 @@ body::after {
     margin-top: clamp(100px, 22vh, 180px);
 }
 
+.arrow-up {
+    margin-top: clamp(18px, 4vh, 40px);
+    transform: rotate(180deg);
+}
+
 .second {
     justify-content: center;
-    gap: 18px;
+    gap: 0;
 }
 
 .links-block {
@@ -595,95 +603,6 @@ const P_LERP = 0.22;
 const P_MAX = 5;
 const pageStart = performance.now();
 const INTRO_DURATION = 1000;
-
-let rubberOffset = 0;
-let rubberVelocity = 0;
-let isRubbering = false;
-let rubberStartY = 0;
-let lastTouchY = 0;
-
-scroller.addEventListener('touchstart', e => {
-    if (e.touches.length !== 1) return;
-    lastTouchY = e.touches[0].clientY;
-    rubberStartY = e.touches[0].clientY;
-    isRubbering = false;
-    rubberVelocity = 0;
-}, {passive: true});
-
-scroller.addEventListener('touchmove', e => {
-    if (e.touches.length !== 1) return;
-    const y = e.touches[0].clientY;
-    const delta = y - lastTouchY;
-    lastTouchY = y;
-
-    const scrollY = scroller.scrollTop;
-    const maxScroll = scroller.scrollHeight - scroller.clientHeight;
-
-    if (scrollY <= 0 && delta > 0) {
-        isRubbering = true;
-        rubberOffset += delta * 0.4;
-        rubberOffset = Math.min(rubberOffset, 180);
-        e.preventDefault();
-    } else if (scrollY >= maxScroll && delta < 0) {
-        isRubbering = true;
-        rubberOffset += delta * 0.4;
-        rubberOffset = Math.max(rubberOffset, -180);
-        e.preventDefault();
-    } else {
-        isRubbering = false;
-        rubberOffset = 0;
-    }
-
-    if (isRubbering) {
-        scroller.style.transform = `translateY(${rubberOffset}px)`;
-        scroller.style.transition = 'none';
-    }
-}, {passive: false});
-
-function releaseRubber() {
-    if (!isRubbering) return;
-    isRubbering = false;
-    scroller.style.transition = 'transform 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
-    scroller.style.transform = 'translateY(0px)';
-    setTimeout(() => {
-        scroller.style.transition = '';
-        scroller.style.transform = '';
-        rubberOffset = 0;
-    }, 500);
-}
-
-scroller.addEventListener('touchend', releaseRubber, {passive: true});
-scroller.addEventListener('touchcancel', releaseRubber, {passive: true});
-
-let wheelRubberOffset = 0;
-let wheelRubbering = false;
-let wheelTimeout = null;
-
-scroller.addEventListener('wheel', e => {
-    const scrollY = scroller.scrollTop;
-    const maxScroll = scroller.scrollHeight - scroller.clientHeight;
-
-    if ((scrollY <= 0 && e.deltaY < 0) || (scrollY >= maxScroll && e.deltaY > 0)) {
-        e.preventDefault();
-        wheelRubbering = true;
-        wheelRubberOffset += e.deltaY * 0.3;
-        wheelRubberOffset = Math.max(-120, Math.min(120, wheelRubberOffset));
-        scroller.style.transform = `translateY(${-wheelRubberOffset}px)`;
-        scroller.style.transition = 'none';
-
-        clearTimeout(wheelTimeout);
-        wheelTimeout = setTimeout(() => {
-            wheelRubbering = false;
-            scroller.style.transition = 'transform 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
-            scroller.style.transform = 'translateY(0px)';
-            setTimeout(() => {
-                scroller.style.transition = '';
-                scroller.style.transform = '';
-                wheelRubberOffset = 0;
-            }, 500);
-        }, 80);
-    }
-}, {passive: false});
 
 function tick(now) {
     const time = now * 0.001;
