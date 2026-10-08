@@ -38,30 +38,22 @@ html, body {
     position: fixed;
     top: 0; left: 0;
     width: 100%; height: 100%;
-    background: rgba(0,0,0,0.85);
+    background: rgba(0,0,0,0.92);
     z-index: 50;
     pointer-events: none;
-    transition: opacity 3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    transition: opacity 1.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
 }
 #fadeOverlay.hidden {
     opacity: 0;
 }
 
-body::before, body::after {
-    content: '';
+#vignetteOverlay {
     position: fixed;
-    left: 0; right: 0;
-    height: 90px;
-    z-index: 10;
+    top: 0; left: 0;
+    width: 100vw; height: 100vh;
     pointer-events: none;
-}
-body::before {
-    top: 0;
-    background: linear-gradient(to bottom, rgba(0,0,0,0.65) 0%, rgba(0,0,0,0.15) 70%, transparent 100%);
-}
-body::after {
-    bottom: 0;
-    background: linear-gradient(to top, rgba(0,0,0,0.65) 0%, rgba(0,0,0,0.15) 70%, transparent 100%);
+    z-index: 4;
+    background: radial-gradient(circle at 50% 50%, rgba(0,0,0,0) 22%, rgba(0,0,0,0.12) 42%, rgba(0,0,0,0.48) 68%, rgba(0,0,0,0.86) 88%, rgba(0,0,0,0.99) 100%);
 }
 
 #glCanvas {
@@ -153,11 +145,6 @@ body::after {
     margin-top: clamp(100px, 22vh, 180px);
 }
 
-.arrow-up {
-    margin-top: clamp(18px, 4vh, 40px);
-    transform: rotate(180deg);
-}
-
 .second {
     justify-content: center;
     gap: 0;
@@ -224,6 +211,7 @@ body::after {
 <body>
 
 <div id="fadeOverlay"></div>
+<div id="vignetteOverlay"></div>
 <canvas id="glCanvas"></canvas>
 
 <div class="container" id="scroller">
@@ -277,7 +265,6 @@ function compile(type, src) {
     gl.shaderSource(s, src);
     gl.compileShader(s);
     if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) {
-        console.error('Shader compile error:', gl.getShaderInfoLog(s));
         return null;
     }
     return s;
@@ -287,9 +274,6 @@ function program(vs, fs) {
     gl.attachShader(p, compile(gl.VERTEX_SHADER, vs));
     gl.attachShader(p, compile(gl.FRAGMENT_SHADER, fs));
     gl.linkProgram(p);
-    if (!gl.getProgramParameter(p, gl.LINK_STATUS)) {
-        console.error('Program link error:', gl.getProgramInfoLog(p));
-    }
     return p;
 }
 
@@ -302,7 +286,7 @@ void main(){
 }`;
 
 function getFragSrc(themeIdx) {
-    let blobC, glowC1, glowC2, starC, baseC, powC, tone;
+    let blobC, glowC1, glowC2, starC, baseC, powC;
 
     if (themeIdx === 0) {
         blobC = `vec3[](vec3(0.95,0.45,0.08),vec3(0.65,0.12,0.75),vec3(0.85,0.25,0.15),vec3(0.35,0.08,0.55))`;
@@ -311,7 +295,6 @@ function getFragSrc(themeIdx) {
         starC = `vec3(1.0,0.85,0.6)`;
         baseC = `vec3(0.02,0.01,0.015)`;
         powC = `vec3(0.92,0.95,1.0)`;
-        tone = `vec3(0.015,0.008,0.01)`;
     } else if (themeIdx === 1) {
         blobC = `vec3[](vec3(0.15,0.45,0.95),vec3(0.08,0.25,0.75),vec3(0.12,0.55,0.85),vec3(0.05,0.15,0.45))`;
         glowC1 = `vec3(0.1,0.4,0.9)`;
@@ -319,7 +302,6 @@ function getFragSrc(themeIdx) {
         starC = `vec3(0.6,0.8,1.0)`;
         baseC = `vec3(0.01,0.015,0.03)`;
         powC = `vec3(1.0,0.98,0.95)`;
-        tone = `vec3(0.008,0.012,0.02)`;
     } else {
         blobC = `vec3[](vec3(0.95,0.25,0.05),vec3(0.85,0.15,0.08),vec3(0.75,0.35,0.05),vec3(0.55,0.08,0.05))`;
         glowC1 = `vec3(0.95,0.45,0.1)`;
@@ -327,7 +309,6 @@ function getFragSrc(themeIdx) {
         starC = `vec3(1.0,0.75,0.5)`;
         baseC = `vec3(0.03,0.01,0.005)`;
         powC = `vec3(0.95,0.92,0.9)`;
-        tone = `vec3(0.02,0.006,0.004)`;
     }
 
     return `#version 300 es
@@ -335,34 +316,18 @@ precision highp float;
 in vec2 v_uv;
 out vec4 fragColor;
 uniform float u_time;
+uniform float u_burst;
 uniform vec2 u_resolution;
+uniform float u_beat;
+uniform float u_bass;
+uniform float u_treble;
+uniform vec2 u_offset;
+uniform float u_motion;
 
 float hash(vec2 p) {
     vec3 p3 = fract(vec3(p.xyx) * 0.1031);
     p3 += dot(p3, p3.yzx + 33.33);
     return fract((p3.x + p3.y) * p3.z);
-}
-
-float noise(vec2 p) {
-    vec2 i = floor(p);
-    vec2 f = fract(p);
-    f = f * f * (3.0 - 2.0 * f);
-    float a = hash(i);
-    float b = hash(i + vec2(1.0, 0.0));
-    float c = hash(i + vec2(0.0, 1.0));
-    float d = hash(i + vec2(1.0, 1.0));
-    return mix(mix(a, b, f.x), mix(c, d, f.x), f.y);
-}
-
-float fbm(vec2 p) {
-    float v = 0.0;
-    float a = 0.5;
-    for (int i = 0; i < 4; i++) {
-        v += a * noise(p);
-        p *= 2.03;
-        a *= 0.5;
-    }
-    return v;
 }
 
 const vec3 blobColors[4] = ${blobC};
@@ -372,27 +337,27 @@ vec3 scene(vec2 p, float t) {
 
     for(int i=0; i<4; i++){
         float fi = float(i);
-        float tt = t * (0.7 + fi * 0.25) + fi * 3.927;
+        float tt = t * (0.55 + fi * 0.18) + fi * 3.927;
         vec2 pos = vec2(
-            sin(tt * 0.7 + fi * 1.9) * 0.65 + cos(tt * 0.35) * 0.25,
-            cos(tt * 0.5 + fi * 2.4) * 0.45 + sin(tt * 0.3) * 0.2
+            sin(tt * 0.65 + fi * 1.7) * 0.52 + cos(tt * 0.3) * 0.18,
+            cos(tt * 0.45 + fi * 2.2) * 0.38 + sin(tt * 0.25) * 0.15
         );
         float dist = length(p - pos);
-        float size = 0.32 + fi * 0.06;
-        float blob = exp(-dist * dist / (size * size)) * 0.45;
+        float size = (0.34 + fi * 0.05) * (1.0 + u_bass * 0.16 + u_beat * 0.08);
+        float blob = exp(-dist * dist / (size * size)) * (0.42 + u_bass * 0.18 + u_beat * 0.10);
         c += blobColors[i] * blob;
     }
 
     for(int i=0; i<6; i++){
         float fi = float(i);
-        float tt = t * 0.55 + fi * 1.047;
+        float tt = (u_time * 0.11 + u_burst * 0.04) * 0.5 + fi * 1.047;
         vec2 pos = vec2(
-            sin(tt * 0.85 + fi * 2.3) * 0.55,
-            cos(tt * 0.65 + fi * 1.5) * 0.45
+            sin(tt * 0.75 + fi * 2.1) * 0.48,
+            cos(tt * 0.55 + fi * 1.4) * 0.38
         );
         float dist = length(p - pos);
-        float size = 0.035 + mod(fi, 3.0) * 0.012;
-        float glow = exp(-dist * dist / (size * size * 0.35)) * 0.3;
+        float size = (0.04 + mod(fi, 3.0) * 0.012) * (1.0 + u_bass * 0.15 + u_treble * 0.25);
+        float glow = exp(-dist * dist / (size * size * 0.38)) * (0.24 + u_bass * 0.20 + u_treble * 0.25);
         vec3 pc = mix(
             ${glowC1},
             ${glowC2},
@@ -401,16 +366,18 @@ vec3 scene(vec2 p, float t) {
         c += pc * glow;
     }
 
-    for(int i=0; i<12; i++){
+    for(int i=0; i<26; i++){
         float fi = float(i);
+        float dirX = mod(fi, 3.0) - 1.0;
+        float dirY = mod(fi + 1.0, 3.0) - 1.0;
         vec2 starPos = vec2(
-            mod(hash(vec2(fi, 0.0)) * 4.0 - 2.0 + t * 0.018 * (mod(fi, 3.0) - 1.0), 4.0) - 2.0,
-            mod(hash(vec2(0.0, fi)) * 4.0 - 2.0 + t * 0.012 * (mod(fi + 1.0, 3.0) - 1.0), 4.0) - 2.0
+            mod(hash(vec2(fi, 0.0)) * 4.0 - 2.0 + (u_time * 0.015 + u_burst * 0.02) * dirX, 4.0) - 2.0,
+            mod(hash(vec2(0.0, fi)) * 4.0 - 2.0 + (u_time * 0.012 + u_burst * 0.015) * dirY, 4.0) - 2.0
         );
         float dist = length(p - starPos);
-        float twinkle = 0.5 + 0.5 * sin(u_time * 2.5 + fi * 3.5);
-        float size = 0.005 + hash(vec2(fi, fi)) * 0.007;
-        float glow = exp(-dist * dist / (size * size * 0.2)) * 0.18 * twinkle;
+        float twinkle = 0.5 + 0.5 * sin(u_time * 2.5 + fi * 4.0 + u_treble * 4.0);
+        float size = (0.0035 + hash(vec2(fi, fi)) * 0.006) * (1.0 + u_treble * 0.35);
+        float glow = exp(-dist * dist / (size * size * 0.18)) * (0.16 + u_treble * 0.30) * twinkle;
         vec3 sc = ${starC};
         c += sc * glow;
     }
@@ -422,31 +389,45 @@ void main(){
     vec2 uv = v_uv;
     vec2 p = uv * 2.0 - 1.0;
     p.x *= u_resolution.x / u_resolution.y;
-    float t = u_time * 0.12;
 
-    vec3 col = scene(p, t);
+    p += u_offset;
+
+    float r2 = dot(p, p);
+    p *= 1.0 + (0.015 + u_bass * 0.02) * r2;
+
+    float t = u_time * 0.09 + u_burst * 0.02;
+
+    vec2 normCoord = (uv - 0.5) * 2.0;
+    float circDist = length(normCoord);
+    float edgeGaussian = 1.0 - exp(-pow(circDist * 0.75, 2.0));
+
+    float ca = (0.006 + u_bass * 0.012 + u_motion * 0.02) * smoothstep(0.1, 1.2, length(p));
+    float blurStr = (0.012 + edgeGaussian * 0.045 + u_bass * 0.025 + u_motion * 0.02);
 
     vec3 acc = vec3(0.0);
-    float samples = 5.0;
-    float strength = 0.022 * smoothstep(0.0, 0.9, length(p));
+    float samples = 4.0;
     for(float i=0.0; i<samples; i+=1.0){
-        float fi = i / samples;
-        acc += scene(p * (1.0 - fi * strength), t);
+        float fi = i / (samples - 1.0);
+        vec2 sp = p * (1.0 - fi * blurStr);
+        acc += scene(sp, t);
     }
-    col = mix(col, acc / samples, 0.35);
+    vec3 col = acc / samples;
 
-    float grain = (hash(uv * 500.0 + u_time) - 0.5) * 0.015;
+    vec2 caShift = p * ca;
+    col.r = mix(col.r, scene(p + caShift, t).r, 0.75);
+    col.b = mix(col.b, scene(p - caShift, t).b, 0.75);
+
+    float grain = (hash(uv * 500.0 + u_time) - 0.5) * (0.014 + u_treble * 0.015);
     col += grain;
 
-    float vig = 1.0 - dot(p, p) * 0.1;
-    col *= max(vig, 0.25);
+    float gaussianVig = exp(-pow(circDist * 0.70, 2.2));
+    gaussianVig = clamp(gaussianVig, 0.03, 1.0);
+    col *= gaussianVig;
 
-    float edgeDist = length(p);
-    float dof = smoothstep(0.4, 1.4, edgeDist) * 0.18;
-    col = mix(col, col * 0.7, dof);
+    col *= (1.0 + u_bass * 0.09 + u_beat * 0.05);
 
     col = pow(col, ${powC});
-    col = col / (1.0 + col * 0.25);
+    col = col / (1.0 + col * 0.22);
 
     fragColor = vec4(col, 1.0);
 }`;
@@ -490,6 +471,35 @@ function getTheme() {
 
 currentTheme = getTheme();
 
+let burstVel = 0.0;
+let burstOffset = 0.0;
+let smoothBass = 0.2;
+let smoothTreble = 0.2;
+let beatImpulse = 0.0;
+let lastTickTime = performance.now();
+
+let bgOffsetX = 0, bgOffsetY = 0;
+let targetBgX = 0, targetBgY = 0;
+let prevBgX = 0, prevBgY = 0;
+let motionEnergy = 0;
+let lastGamma = null, lastBeta = null;
+
+const MAX_OFFSET = 0.21;
+function addParallaxDelta(dx, dy, sens) {
+    const currentDist = Math.hypot(targetBgX, targetBgY);
+    const ratio = Math.min(1.0, currentDist / MAX_OFFSET);
+    const resistance = Math.max(0.03, 1.0 - Math.pow(ratio, 2.2));
+
+    targetBgX += dx * sens * resistance;
+    targetBgY += dy * sens * resistance;
+
+    const newDist = Math.hypot(targetBgX, targetBgY);
+    if (newDist > MAX_OFFSET) {
+        targetBgX = (targetBgX / newDist) * MAX_OFFSET;
+        targetBgY = (targetBgY / newDist) * MAX_OFFSET;
+    }
+}
+
 let bgProg, bgLocs;
 function rebuildShader() {
     if (bgProg) {
@@ -499,7 +509,13 @@ function rebuildShader() {
     bgLocs = {
         a_position: gl.getAttribLocation(bgProg, 'a_position'),
         u_time: gl.getUniformLocation(bgProg, 'u_time'),
-        u_resolution: gl.getUniformLocation(bgProg, 'u_resolution')
+        u_burst: gl.getUniformLocation(bgProg, 'u_burst'),
+        u_resolution: gl.getUniformLocation(bgProg, 'u_resolution'),
+        u_beat: gl.getUniformLocation(bgProg, 'u_beat'),
+        u_bass: gl.getUniformLocation(bgProg, 'u_bass'),
+        u_treble: gl.getUniformLocation(bgProg, 'u_treble'),
+        u_offset: gl.getUniformLocation(bgProg, 'u_offset'),
+        u_motion: gl.getUniformLocation(bgProg, 'u_motion')
     };
 }
 rebuildShader();
@@ -525,10 +541,6 @@ const bottomText = document.getElementById('bottomText');
 const slide2 = document.getElementById('slide2');
 
 const state = {
-    px: 0,
-    py: 0,
-    tpx: 0,
-    tpy: 0,
     autoDone: false,
     autoStart: 0,
     autoActive: false
@@ -536,44 +548,31 @@ const state = {
 
 if (!isMobile) {
     document.addEventListener('mousemove', e => {
-        state.tpx = (e.clientX / window.innerWidth - 0.5) * 2;
-        state.tpy = (e.clientY / window.innerHeight - 0.5) * 2;
+        const dx = e.movementX || 0;
+        const dy = e.movementY || 0;
+        addParallaxDelta(dx, -dy, 0.0009);
     });
 }
 
-let gBase = null;
 function onGyro(e) {
     if (e.gamma == null || e.beta == null) return;
-    if (!gBase) {
-        gBase = {g: e.gamma, b: e.beta};
-    } else {
-        gBase.g += (e.gamma - gBase.g) * 0.12;
-        gBase.b += (e.beta - gBase.b) * 0.12;
+    if (lastGamma === null) {
+        lastGamma = e.gamma;
+        lastBeta = e.beta;
+        return;
     }
-    const dx = (e.gamma - gBase.g) / 45;
-    const dy = (e.beta - gBase.b) / 45;
-    state.tpx = Math.max(-1, Math.min(1, dx));
-    state.tpy = Math.max(-1, Math.min(1, dy));
+    const dg = e.gamma - lastGamma;
+    const db = e.beta - lastBeta;
+    lastGamma = e.gamma;
+    lastBeta = e.beta;
+
+    if (Math.abs(dg) > 60 || Math.abs(db) > 60) return;
+
+    addParallaxDelta(dg, -db, 0.0055);
 }
 
-function bindGyro() {
+if (window.DeviceOrientationEvent) {
     window.addEventListener('deviceorientation', onGyro);
-}
-
-const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
-
-if (!isIOS && window.DeviceOrientationEvent) {
-    if (typeof DeviceOrientationEvent.requestPermission === 'function') {
-        const req = () => {
-            DeviceOrientationEvent.requestPermission().then(r => {
-                if (r === 'granted') bindGyro();
-            }).catch(() => {});
-        };
-        document.addEventListener('click', req, {once: true});
-        document.addEventListener('touchstart', req, {once: true});
-    } else {
-        bindGyro();
-    }
 }
 
 const targetY = slide2.offsetTop;
@@ -589,23 +588,48 @@ function easeOutCubic(t) {
     return 1 - Math.pow(1 - t, 3);
 }
 
+let pageStart = performance.now();
+const INTRO_DURATION = 1000;
+
 setTimeout(() => {
     overlay.classList.add('hidden');
-}, 100);
+}, 50);
 
 setTimeout(() => {
     scroller.style.scrollSnapType = 'none';
     state.autoStart = performance.now();
     state.autoActive = true;
-}, 1000);
-
-const P_LERP = 0.22;
-const P_MAX = 5;
-const pageStart = performance.now();
-const INTRO_DURATION = 1000;
+}, 800);
 
 function tick(now) {
+    const dt = Math.min((now - lastTickTime) * 0.001, 0.08);
+    lastTickTime = now;
     const time = now * 0.001;
+
+    const slowT = time * 0.8;
+    const autoBass = 0.22 + 0.12 * Math.sin(slowT * 1.3) + 0.08 * Math.cos(slowT * 2.1);
+    const autoTreble = 0.20 + 0.12 * Math.sin(slowT * 2.4 + 1.2);
+    const autoPulse = Math.pow(Math.max(0, Math.sin(slowT * 1.5)), 4.0);
+
+    smoothBass += (autoBass - smoothBass) * 0.08;
+    smoothTreble += (autoTreble - smoothTreble) * 0.08;
+    beatImpulse = autoPulse * 0.35;
+    burstVel = 0.04 + autoPulse * 0.06;
+
+    burstOffset += burstVel * dt;
+
+    targetBgX *= Math.exp(-dt * 3.5);
+    targetBgY *= Math.exp(-dt * 3.5);
+    bgOffsetX += (targetBgX - bgOffsetX) * 0.15;
+    bgOffsetY += (targetBgY - bgOffsetY) * 0.15;
+
+    const moveDist = Math.hypot(bgOffsetX - prevBgX, bgOffsetY - prevBgY);
+    prevBgX = bgOffsetX;
+    prevBgY = bgOffsetY;
+    const curSpeed = moveDist / Math.max(dt, 0.001);
+    motionEnergy += (curSpeed * 0.55 - motionEnergy) * 0.2;
+    const clampedMotion = Math.min(1.0, motionEnergy);
+
     const introElapsed = now - pageStart;
     const introP = Math.min(introElapsed / INTRO_DURATION, 1);
     const introEase = easeOutCubic(introP);
@@ -623,16 +647,8 @@ function tick(now) {
         }
     }
 
-    state.px += (state.tpx - state.px) * P_LERP;
-    state.py += (state.tpy - state.py) * P_LERP;
-
     const scrollY = scroller.scrollTop;
     const vh = window.innerHeight;
-    const pBlur = Math.abs(state.px) * 0.6 + Math.abs(state.py) * 0.35;
-    const pDark = Math.abs(state.px) * 0.08 + Math.abs(state.py) * 0.05;
-
-    const ox = state.px * P_MAX;
-    const oy = state.py * P_MAX;
 
     const introTextY = (1 - introEase) * -55;
     const introTextBlur = (1 - introEase) * 10;
@@ -644,26 +660,26 @@ function tick(now) {
         const blur = p * 12;
         const scale = 1 + p * 0.15;
         const opacity = 1 - p * 0.9;
-        const tBlur = blur + pBlur + introTextBlur;
-        const tOp = Math.max(0, opacity - pDark) * introEase;
+        const tBlur = blur + introTextBlur;
+        const tOp = Math.max(0, opacity) * introEase;
 
         heroText.style.filter = `blur(${tBlur}px)`;
-        heroText.style.transform = `scale(${scale}) translate(${ox}px, ${oy + introTextY}px)`;
+        heroText.style.transform = `scale(${scale}) translateY(${introTextY}px)`;
         heroText.style.opacity = tOp;
 
-        const aBlur = blur * 0.8 + pBlur + introArrowBlur;
-        const aOp = Math.max(0, opacity - pDark) * 0.5 * introEase;
+        const aBlur = blur * 0.8 + introArrowBlur;
+        const aOp = Math.max(0, opacity) * 0.5 * introEase;
 
         heroArrow.style.filter = `blur(${aBlur}px)`;
-        heroArrow.style.transform = `scale(${scale}) translate(${ox}px, ${oy + p * 20 + introArrowY}px)`;
+        heroArrow.style.transform = `scale(${scale}) translateY(${p * 20 + introArrowY}px)`;
         heroArrow.style.opacity = aOp;
     } else {
         heroText.style.filter = 'blur(12px)';
-        heroText.style.transform = `scale(1.15) translate(${ox}px, ${oy}px)`;
+        heroText.style.transform = 'scale(1.15)';
         heroText.style.opacity = '0';
 
         heroArrow.style.filter = 'blur(10px)';
-        heroArrow.style.transform = `scale(1.1) translate(${ox}px, ${oy + 20}px)`;
+        heroArrow.style.transform = 'scale(1.1) translateY(20px)';
         heroArrow.style.opacity = '0';
     }
 
@@ -672,15 +688,13 @@ function tick(now) {
     const blur2 = (1 - p2) * 12;
     const scale2 = 0.85 + p2 * 0.15;
     const opacity2 = p2;
-    const tBlur2 = blur2 + pBlur;
-    const tOp2 = Math.max(0, opacity2 - pDark);
 
-    linksText.style.filter = `blur(${tBlur2}px)`;
-    linksText.style.transform = `scale(${scale2}) translate(${ox}px, ${oy}px)`;
-    linksText.style.opacity = tOp2;
+    linksText.style.filter = `blur(${blur2}px)`;
+    linksText.style.transform = `scale(${scale2})`;
+    linksText.style.opacity = opacity2;
 
     bottomText.style.transform = `translate(-50%, 0)`;
-    bottomText.style.opacity = Math.max(0.2, 0.4 - pDark);
+    bottomText.style.opacity = 0.4;
 
     gl.viewport(0, 0, width, height);
     const clearColors = [
@@ -693,7 +707,13 @@ function tick(now) {
     gl.clear(gl.COLOR_BUFFER_BIT);
     gl.useProgram(bgProg);
     gl.uniform1f(bgLocs.u_time, time);
+    gl.uniform1f(bgLocs.u_burst, burstOffset);
     gl.uniform2f(bgLocs.u_resolution, width, height);
+    gl.uniform1f(bgLocs.u_beat, beatImpulse);
+    gl.uniform1f(bgLocs.u_bass, smoothBass);
+    gl.uniform1f(bgLocs.u_treble, smoothTreble);
+    gl.uniform2f(bgLocs.u_offset, bgOffsetX, bgOffsetY);
+    gl.uniform1f(bgLocs.u_motion, clampedMotion);
     gl.bindVertexArray(quadVAO);
     gl.drawArrays(gl.TRIANGLES, 0, 6);
 
