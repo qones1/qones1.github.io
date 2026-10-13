@@ -20,28 +20,38 @@
 <link rel="canonical" href="https://hzzz.fun">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700;900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@400;500;600;700;900&display=block" rel="stylesheet">
 <style>
-* { margin: 0; padding: 0; box-sizing: border-box; }
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Unbounded', sans-serif !important;
+    font-synthesis: none;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: geometricPrecision;
+}
+
 html, body {
-    font-family: 'Space Grotesk', sans-serif;
     background: #000;
-    color: white;
+    color: #fff;
     overflow: hidden;
     height: 100vh;
     width: 100vw;
     -webkit-tap-highlight-color: transparent;
     touch-action: manipulation;
+    -webkit-text-size-adjust: 100%;
 }
 
 #fadeOverlay {
     position: fixed;
     top: 0; left: 0;
     width: 100%; height: 100%;
-    background: rgba(0,0,0,0.92);
+    background: rgba(0,0,0,0.95);
     z-index: 50;
     pointer-events: none;
-    transition: opacity 1.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    transition: opacity 1.4s cubic-bezier(0.22, 1, 0.36, 1);
 }
 #fadeOverlay.hidden {
     opacity: 0;
@@ -53,7 +63,10 @@ html, body {
     width: 100vw; height: 100vh;
     pointer-events: none;
     z-index: 4;
-    background: radial-gradient(circle at 50% 50%, rgba(0,0,0,0) 22%, rgba(0,0,0,0.12) 42%, rgba(0,0,0,0.48) 68%, rgba(0,0,0,0.86) 88%, rgba(0,0,0,0.99) 100%);
+    background:
+        radial-gradient(circle at 50% 50%, rgba(255,255,255,0.015) 0%, rgba(190,200,215,0.03) 52%, rgba(0,0,0,0.58) 78%, rgba(0,0,0,0.96) 100%);
+    backdrop-filter: blur(0.4px);
+    -webkit-backdrop-filter: blur(0.4px);
 }
 
 #glCanvas {
@@ -83,7 +96,7 @@ html, body {
 
 @keyframes linkFlash {
     0% { filter: blur(0px); }
-    50% { filter: blur(2px) brightness(1.4); }
+    50% { filter: blur(1.5px) brightness(1.35); }
     100% { filter: blur(0px); }
 }
 .flash-link {
@@ -108,7 +121,7 @@ html, body {
     position: relative;
     scroll-snap-align: start;
     flex-direction: column;
-    padding: 0 20px;
+    padding: 0 24px;
     perspective: 1000px;
 }
 
@@ -116,87 +129,116 @@ html, body {
     text-align: center;
 }
 .hero-text {
-    font-size: clamp(44px, 14vw, 90px);
+    font-size: clamp(38px, 12.5vw, 84px);
     font-weight: 900;
-    letter-spacing: clamp(4px, 2vw, 14px);
-    color: white;
-    text-shadow: 0 4px 30px rgba(0,0,0,0.6), 0 0 60px rgba(255,255,255,0.08);
+    letter-spacing: clamp(5px, 2.4vw, 16px);
+    color: #ffffff;
+    text-shadow: 0 6px 34px rgba(0,0,0,0.75), 0 0 28px rgba(185,195,210,0.14);
     pointer-events: none;
     text-transform: uppercase;
-    line-height: 1.1;
+    line-height: 1.05;
+    transform: scaleX(1.08);
     will-change: filter, transform, opacity;
 }
 
 .arrow {
-    font-size: clamp(22px, 5.5vw, 32px);
-    color: rgba(255,255,255,0.52);
+    font-size: clamp(20px, 5vw, 28px);
+    font-weight: 400;
+    color: rgba(255,255,255,0.42);
     animation: bounce 2.5s infinite ease-in-out;
-    text-shadow: 0 2px 10px rgba(0,0,0,0.5);
+    text-shadow: 0 2px 12px rgba(0,0,0,0.65);
     pointer-events: none;
     will-change: filter, transform, opacity;
     display: block;
 }
 @keyframes bounce {
-    0%, 100% { transform: translateY(0); opacity: 0.25; }
-    50% { transform: translateY(14px); opacity: 0.6; }
+    0%, 100% { transform: translateY(0); opacity: 0.22; }
+    50% { transform: translateY(12px); opacity: 0.55; }
 }
 
 .arrow-down {
-    margin-top: clamp(100px, 22vh, 180px);
+    margin-top: clamp(95px, 20vh, 170px);
 }
 
 .second {
     justify-content: center;
-    gap: 0;
 }
 
 .links-block {
-    text-align: center;
-    font-size: clamp(13px, 3.2vw, 17px);
-    font-weight: 500;
-    color: rgba(255,255,255,0.9);
-    text-shadow: 0 2px 15px rgba(0,0,0,0.7);
-    letter-spacing: 0.5px;
+    width: min(88vw, 370px);
+    font-size: clamp(12px, 3.1vw, 15px);
     will-change: filter, transform, opacity;
 }
 
-.links-block a {
-    color: inherit;
-    text-decoration: none;
-    pointer-events: auto;
-    transition: all 0.25s ease;
-    border-bottom: 1px solid rgba(255,255,255,0.15);
-    padding-bottom: 1px;
-    display: inline-block;
-}
-.links-block a:hover {
-    opacity: 0.6;
-    border-bottom-color: rgba(255,255,255,0.5);
-}
-
 .divider {
-    font-size: clamp(10px, 2.5vw, 13px);
-    font-weight: 600;
-    letter-spacing: 3px;
-    color: rgba(255,255,255,0.35);
+    font-size: clamp(9px, 2.1vw, 11px);
+    font-weight: 700;
+    letter-spacing: 4.5px;
+    color: rgba(175, 182, 195, 0.28);
     text-transform: uppercase;
-    margin: 8px 0;
+    margin: 30px 0 10px 0;
+    text-align: left;
     pointer-events: none;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    padding-bottom: 6px;
+}
+.divider:first-child {
+    margin-top: 0;
 }
 
 .link-row {
-    line-height: 2.2;
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    padding: 7px 0;
+    gap: 16px;
+}
+
+.link-label {
+    font-size: clamp(10px, 2.5vw, 12px);
+    font-weight: 500;
+    letter-spacing: 1.8px;
+    color: rgba(190, 198, 210, 0.36);
+    text-transform: uppercase;
+    pointer-events: none;
+    text-shadow: 0 2px 10px rgba(0,0,0,0.8);
+}
+
+.links-block a {
+    color: #f3f5f8;
+    font-weight: 700;
+    font-size: clamp(11px, 2.9vw, 14px);
+    letter-spacing: 0.6px;
+    text-decoration: none;
+    text-align: right;
+    pointer-events: auto;
+    transition: color 0.25s ease, text-shadow 0.25s ease, border-color 0.25s ease, transform 0.25s ease;
+    border-bottom: 1px solid rgba(195, 205, 220, 0.18);
+    padding-bottom: 2px;
+    text-shadow:
+        0 2px 10px rgba(0, 0, 0, 0.92),
+        0 0 11px rgba(165, 175, 190, 0.22),
+        0 0 22px rgba(130, 140, 155, 0.12);
+}
+
+.links-block a:hover {
+    color: #ffffff;
+    border-bottom-color: rgba(210, 220, 235, 0.55);
+    text-shadow:
+        0 2px 12px rgba(0, 0, 0, 0.95),
+        0 0 14px rgba(190, 200, 215, 0.38),
+        0 0 28px rgba(150, 160, 175, 0.2);
 }
 
 .bottom-text {
     position: fixed;
-    bottom: clamp(18px, 3vh, 40px);
+    bottom: clamp(18px, 3vh, 36px);
     left: 50%;
-    font-size: clamp(10px, 2.5vw, 13px);
+    font-size: clamp(8px, 2vw, 10px);
     font-weight: 500;
-    letter-spacing: clamp(2px, 1vw, 5px);
-    color: rgba(255,255,255,0.4);
-    text-shadow: 0 2px 10px rgba(0,0,0,0.5);
+    letter-spacing: clamp(2px, 1vw, 4.5px);
+    color: rgba(185, 195, 210, 0.32);
+    text-shadow: 0 2px 10px rgba(0,0,0,0.65);
     text-transform: uppercase;
     pointer-events: none;
     z-index: 12;
@@ -222,16 +264,31 @@ html, body {
 
     <section class="section second" id="slide2">
         <div class="links-block" id="linksText">
-            <div class="divider">— network —</div>
-            <div class="link-row">TG — <a href="https://t.me/EXOSEO" target="_blank">@EXOSEO</a></div>
-            <div class="link-row">DISCORD — <a href="https://discord.gg/YycWUSeb" target="_blank">@MAKOSKA69</a></div>
+            <div class="divider">network</div>
+            <div class="link-row">
+                <span class="link-label">TG</span>
+                <a href="https://t.me/EXOSEO" target="_blank">@EXOSEO</a>
+            </div>
+            <div class="link-row">
+                <span class="link-label">DISCORD</span>
+                <a href="https://discord.gg/YycWUSeb" target="_blank">@MAKOSKA69</a>
+            </div>
 
-            <div class="divider">— projects —</div>
-            <div class="link-row">VPN — <a href="https://t.me/FVNETBOT" target="_blank">@FVNETBOT</a></div>
-            <div class="link-row">PLUGINS — <a href="https://t.me/HzzzPlugins" target="_blank">@HZZZPLUGINS</a></div>
+            <div class="divider">projects</div>
+            <div class="link-row">
+                <span class="link-label">VPN</span>
+                <a href="https://t.me/FVNETBOT" target="_blank">@FVNETBOT</a>
+            </div>
+            <div class="link-row">
+                <span class="link-label">PLUGINS</span>
+                <a href="https://t.me/HzzzPlugins" target="_blank">@HZZZPLUGINS</a>
+            </div>
 
-            <div class="divider">— other —</div>
-            <div class="link-row">TON — <a href="ton://transfer/UQBIsbxjOu2KVjcSNi5EIOzK-BHMcnHhTcCcpWBzh3chT6aU">fuckyoupayme.ton</a></div>
+            <div class="divider">other</div>
+            <div class="link-row">
+                <span class="link-label">TON</span>
+                <a href="ton://transfer/UQBIsbxjOu2KVjcSNi5EIOzK-BHMcnHhTcCcpWBzh3chT6aU">fuckyoupayme.ton</a>
+            </div>
         </div>
     </section>
 </div>
@@ -241,7 +298,7 @@ html, body {
 <script>
 const canvas = document.getElementById('glCanvas');
 const isMobile = window.innerWidth < 768 || /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-const dpr = Math.min(window.devicePixelRatio, isMobile ? 1.25 : 2);
+const dpr = Math.min(window.devicePixelRatio, isMobile ? 1.35 : 2);
 
 const gl = canvas.getContext('webgl2', { alpha: false, antialias: false, premultipliedAlpha: false });
 if (!gl) {
@@ -286,29 +343,32 @@ void main(){
 }`;
 
 function getFragSrc(themeIdx) {
-    let blobC, glowC1, glowC2, starC, baseC, powC;
+    let blobC, glowC1, glowC2, starC, baseC, powC, mistTint;
 
     if (themeIdx === 0) {
         blobC = `vec3[](vec3(0.95,0.45,0.08),vec3(0.65,0.12,0.75),vec3(0.85,0.25,0.15),vec3(0.35,0.08,0.55))`;
-        glowC1 = `vec3(0.9,0.5,0.1)`;
-        glowC2 = `vec3(0.5,0.15,0.7)`;
-        starC = `vec3(1.0,0.85,0.6)`;
+        glowC1 = `vec3(0.95,0.52,0.14)`;
+        glowC2 = `vec3(0.58,0.18,0.78)`;
+        starC = `vec3(1.0,0.85,0.65)`;
         baseC = `vec3(0.02,0.01,0.015)`;
         powC = `vec3(0.92,0.95,1.0)`;
+        mistTint = `vec3(0.52,0.38,0.58)`;
     } else if (themeIdx === 1) {
         blobC = `vec3[](vec3(0.15,0.45,0.95),vec3(0.08,0.25,0.75),vec3(0.12,0.55,0.85),vec3(0.05,0.15,0.45))`;
-        glowC1 = `vec3(0.1,0.4,0.9)`;
-        glowC2 = `vec3(0.15,0.3,0.7)`;
-        starC = `vec3(0.6,0.8,1.0)`;
+        glowC1 = `vec3(0.18,0.48,0.95)`;
+        glowC2 = `vec3(0.22,0.36,0.78)`;
+        starC = `vec3(0.65,0.82,1.0)`;
         baseC = `vec3(0.01,0.015,0.03)`;
         powC = `vec3(1.0,0.98,0.95)`;
+        mistTint = `vec3(0.35,0.48,0.68)`;
     } else {
         blobC = `vec3[](vec3(0.95,0.25,0.05),vec3(0.85,0.15,0.08),vec3(0.75,0.35,0.05),vec3(0.55,0.08,0.05))`;
-        glowC1 = `vec3(0.95,0.45,0.1)`;
-        glowC2 = `vec3(0.85,0.2,0.05)`;
-        starC = `vec3(1.0,0.75,0.5)`;
+        glowC1 = `vec3(0.95,0.45,0.12)`;
+        glowC2 = `vec3(0.85,0.22,0.08)`;
+        starC = `vec3(1.0,0.75,0.55)`;
         baseC = `vec3(0.03,0.01,0.005)`;
         powC = `vec3(0.95,0.92,0.9)`;
+        mistTint = `vec3(0.58,0.36,0.32)`;
     }
 
     return `#version 300 es
@@ -332,52 +392,57 @@ float hash(vec2 p) {
 
 const vec3 blobColors[4] = ${blobC};
 
-vec3 scene(vec2 p, float t) {
+vec3 scene(vec2 p, float t, float xBound) {
     vec3 c = ${baseC};
 
     for(int i=0; i<4; i++){
         float fi = float(i);
         float tt = t * (0.55 + fi * 0.18) + fi * 3.927;
         vec2 pos = vec2(
-            sin(tt * 0.65 + fi * 1.7) * 0.52 + cos(tt * 0.3) * 0.18,
-            cos(tt * 0.45 + fi * 2.2) * 0.38 + sin(tt * 0.25) * 0.15
+            (sin(tt * 0.65 + fi * 1.7) * 0.50 + cos(tt * 0.3) * 0.16) * xBound,
+            cos(tt * 0.45 + fi * 2.2) * 0.40 + sin(tt * 0.25) * 0.15
         );
         float dist = length(p - pos);
-        float size = (0.34 + fi * 0.05) * (1.0 + u_bass * 0.16 + u_beat * 0.08);
-        float blob = exp(-dist * dist / (size * size)) * (0.42 + u_bass * 0.18 + u_beat * 0.10);
+        float size = (0.33 + fi * 0.05) * (1.0 + u_bass * 0.16 + u_beat * 0.08);
+        float blob = exp(-dist * dist / (size * size)) * (0.40 + u_bass * 0.18 + u_beat * 0.10);
         c += blobColors[i] * blob;
     }
 
-    for(int i=0; i<6; i++){
+    for(int i=0; i<16; i++){
         float fi = float(i);
-        float tt = (u_time * 0.11 + u_burst * 0.04) * 0.5 + fi * 1.047;
+        float speed = 0.36 + mod(fi, 5.0) * 0.08;
+        float tt = (u_time * 0.12 + u_burst * 0.045) * speed + fi * 1.13;
+        float radX = (0.18 + hash(vec2(fi, 1.0)) * 0.44) * xBound;
+        float radY = 0.16 + hash(vec2(fi, 2.0)) * 0.46;
         vec2 pos = vec2(
-            sin(tt * 0.75 + fi * 2.1) * 0.48,
-            cos(tt * 0.55 + fi * 1.4) * 0.38
+            sin(tt * 0.85 + fi * 2.3) * radX + cos(tt * 0.42 + fi) * 0.07 * xBound,
+            cos(tt * 0.65 + fi * 1.6) * radY + sin(tt * 0.38 - fi) * 0.08
         );
         float dist = length(p - pos);
-        float size = (0.04 + mod(fi, 3.0) * 0.012) * (1.0 + u_bass * 0.15 + u_treble * 0.25);
-        float glow = exp(-dist * dist / (size * size * 0.38)) * (0.24 + u_bass * 0.20 + u_treble * 0.25);
+        float baseSize = 0.018 + pow(hash(vec2(fi, 3.0)), 1.6) * 0.036;
+        float size = baseSize * (1.0 + u_bass * 0.15 + u_treble * 0.26);
+        float core = exp(-dist * dist / (size * size * 0.32)) * (0.22 + u_bass * 0.18 + u_treble * 0.24);
+        float halation = exp(-dist * dist / (size * size * 3.8)) * 0.055;
         vec3 pc = mix(
             ${glowC1},
             ${glowC2},
-            sin(fi * 1.3) * 0.5 + 0.5
+            sin(fi * 1.45 + u_time * 0.2) * 0.5 + 0.5
         );
-        c += pc * glow;
+        c += pc * (core + halation);
     }
 
-    for(int i=0; i<26; i++){
+    for(int i=0; i<32; i++){
         float fi = float(i);
         float dirX = mod(fi, 3.0) - 1.0;
         float dirY = mod(fi + 1.0, 3.0) - 1.0;
         vec2 starPos = vec2(
-            mod(hash(vec2(fi, 0.0)) * 4.0 - 2.0 + (u_time * 0.015 + u_burst * 0.02) * dirX, 4.0) - 2.0,
+            (mod(hash(vec2(fi, 0.0)) * 4.0 - 2.0 + (u_time * 0.015 + u_burst * 0.02) * dirX, 4.0) - 2.0) * xBound,
             mod(hash(vec2(0.0, fi)) * 4.0 - 2.0 + (u_time * 0.012 + u_burst * 0.015) * dirY, 4.0) - 2.0
         );
         float dist = length(p - starPos);
-        float twinkle = 0.5 + 0.5 * sin(u_time * 2.5 + fi * 4.0 + u_treble * 4.0);
-        float size = (0.0035 + hash(vec2(fi, fi)) * 0.006) * (1.0 + u_treble * 0.35);
-        float glow = exp(-dist * dist / (size * size * 0.18)) * (0.16 + u_treble * 0.30) * twinkle;
+        float twinkle = 0.45 + 0.55 * sin(u_time * 2.6 + fi * 4.0 + u_treble * 4.0);
+        float size = (0.003 + hash(vec2(fi, fi)) * 0.0055) * (1.0 + u_treble * 0.35);
+        float glow = exp(-dist * dist / (size * size * 0.18)) * (0.16 + u_treble * 0.28) * twinkle;
         vec3 sc = ${starC};
         c += sc * glow;
     }
@@ -388,46 +453,59 @@ vec3 scene(vec2 p, float t) {
 void main(){
     vec2 uv = v_uv;
     vec2 p = uv * 2.0 - 1.0;
-    p.x *= u_resolution.x / u_resolution.y;
+    float aspect = u_resolution.x / u_resolution.y;
+    p.x *= aspect;
+    float xBound = clamp(aspect, 0.52, 1.15);
 
     p += u_offset;
 
     float r2 = dot(p, p);
-    p *= 1.0 + (0.015 + u_bass * 0.02) * r2;
+    p *= 1.0 + (0.016 + u_bass * 0.02) * r2;
 
     float t = u_time * 0.09 + u_burst * 0.02;
 
     vec2 normCoord = (uv - 0.5) * 2.0;
     float circDist = length(normCoord);
-    float edgeGaussian = 1.0 - exp(-pow(circDist * 0.75, 2.0));
+    float edgeGaussian = 1.0 - exp(-pow(circDist * 0.78, 2.1));
 
-    float ca = (0.006 + u_bass * 0.012 + u_motion * 0.02) * smoothstep(0.1, 1.2, length(p));
-    float blurStr = (0.012 + edgeGaussian * 0.045 + u_bass * 0.025 + u_motion * 0.02);
+    float ca = (0.0065 + u_bass * 0.012 + u_motion * 0.02) * smoothstep(0.08, 1.15, length(p));
+    float blurStr = (0.014 + edgeGaussian * 0.062 + u_bass * 0.025 + u_motion * 0.022);
 
     vec3 acc = vec3(0.0);
-    float samples = 4.0;
+    float samples = 5.0;
     for(float i=0.0; i<samples; i+=1.0){
         float fi = i / (samples - 1.0);
         vec2 sp = p * (1.0 - fi * blurStr);
-        acc += scene(sp, t);
+        acc += scene(sp, t, xBound);
     }
     vec3 col = acc / samples;
 
     vec2 caShift = p * ca;
-    col.r = mix(col.r, scene(p + caShift, t).r, 0.75);
-    col.b = mix(col.b, scene(p - caShift, t).b, 0.75);
+    col.r = mix(col.r, scene(p + caShift, t, xBound).r, 0.72);
+    col.b = mix(col.b, scene(p - caShift, t, xBound).b, 0.72);
 
-    float grain = (hash(uv * 500.0 + u_time) - 0.5) * (0.014 + u_treble * 0.015);
+    vec3 mistSample = scene(p * 0.84, t, xBound);
+    float mistMask = smoothstep(0.28, 1.25, circDist);
+    vec3 steamHaze = mix(mistSample, ${mistTint} * length(mistSample) * 0.75, 0.45);
+    col = mix(col, col + steamHaze * 0.36, mistMask);
+
+    vec2 lensLightDir = normalize(vec2(-0.65, 0.75) + u_offset * 2.2);
+    float rimAngle = max(0.0, dot(normalize(normCoord + 1e-4), lensLightDir));
+    float lensRing = exp(-pow((circDist - 0.86) * 4.2, 2.0));
+    float opticGlint = pow(rimAngle, 3.5) * lensRing * (0.075 + u_bass * 0.04 + u_motion * 0.05);
+    col += mix(vec3(0.75, 0.80, 0.88), ${mistTint}, 0.4) * opticGlint;
+
+    float grain = (hash(uv * 500.0 + u_time) - 0.5) * (0.015 + u_treble * 0.014);
     col += grain;
 
-    float gaussianVig = exp(-pow(circDist * 0.70, 2.2));
+    float gaussianVig = exp(-pow(circDist * 0.69, 2.35));
     gaussianVig = clamp(gaussianVig, 0.03, 1.0);
     col *= gaussianVig;
 
     col *= (1.0 + u_bass * 0.09 + u_beat * 0.05);
 
     col = pow(col, ${powC});
-    col = col / (1.0 + col * 0.22);
+    col = col / (1.0 + col * 0.24);
 
     fragColor = vec4(col, 1.0);
 }`;
@@ -546,6 +624,15 @@ const state = {
     autoActive: false
 };
 
+const stopAutoScroll = () => {
+    if (state.autoActive && !state.autoDone) {
+        state.autoDone = true;
+        scroller.style.scrollSnapType = 'y mandatory';
+    }
+};
+window.addEventListener('wheel', stopAutoScroll, { passive: true });
+window.addEventListener('touchstart', stopAutoScroll, { passive: true });
+
 if (!isMobile) {
     document.addEventListener('mousemove', e => {
         const dx = e.movementX || 0;
@@ -575,31 +662,35 @@ if (window.DeviceOrientationEvent) {
     window.addEventListener('deviceorientation', onGyro);
 }
 
-const targetY = slide2.offsetTop;
-const startY = scroller.scrollTop;
-const distance = targetY - startY;
-const duration = 1400;
+const SCROLL_DURATION = 2500;
+const INTRO_DURATION = 950;
+let pageStart = performance.now();
 
-function easeInOutCubic(t) {
-    return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+function acceleratingScrollCurve(t) {
+    const w = Math.pow(t, 2.15);
+    return w * w * w * (w * (w * 6.0 - 15.0) + 10.0);
 }
 
 function easeOutCubic(t) {
     return 1 - Math.pow(1 - t, 3);
 }
 
-let pageStart = performance.now();
-const INTRO_DURATION = 1000;
-
-setTimeout(() => {
+function startExperience() {
+    pageStart = performance.now();
     overlay.classList.add('hidden');
-}, 50);
-
-setTimeout(() => {
     scroller.style.scrollSnapType = 'none';
-    state.autoStart = performance.now();
+    state.autoStart = pageStart;
     state.autoActive = true;
-}, 800);
+}
+
+if (document.fonts && document.fonts.ready) {
+    Promise.race([
+        document.fonts.ready,
+        new Promise(resolve => setTimeout(resolve, 600))
+    ]).then(startExperience);
+} else {
+    setTimeout(startExperience, 50);
+}
 
 function tick(now) {
     const dt = Math.min((now - lastTickTime) * 0.001, 0.08);
@@ -630,15 +721,16 @@ function tick(now) {
     motionEnergy += (curSpeed * 0.55 - motionEnergy) * 0.2;
     const clampedMotion = Math.min(1.0, motionEnergy);
 
-    const introElapsed = now - pageStart;
+    const introElapsed = Math.max(0, now - pageStart);
     const introP = Math.min(introElapsed / INTRO_DURATION, 1);
     const introEase = easeOutCubic(introP);
 
     if (state.autoActive && !state.autoDone) {
-        const elapsed = now - state.autoStart;
-        const progress = Math.min(elapsed / duration, 1);
-        const eased = easeInOutCubic(progress);
-        scroller.scrollTop = startY + distance * eased;
+        const targetY = slide2.offsetTop;
+        const elapsed = Math.max(0, now - state.autoStart);
+        const progress = Math.min(elapsed / SCROLL_DURATION, 1);
+        const eased = acceleratingScrollCurve(progress);
+        scroller.scrollTop = targetY * eased;
         if (progress >= 1) {
             state.autoDone = true;
             scroller.scrollTop = targetY;
@@ -650,32 +742,32 @@ function tick(now) {
     const scrollY = scroller.scrollTop;
     const vh = window.innerHeight;
 
-    const introTextY = (1 - introEase) * -55;
+    const introTextY = (1 - introEase) * -45;
     const introTextBlur = (1 - introEase) * 10;
-    const introArrowY = (1 - introEase) * 45;
+    const introArrowY = (1 - introEase) * 38;
     const introArrowBlur = (1 - introEase) * 7;
 
     if (scrollY < vh) {
-        const p = Math.min(scrollY / (vh * 0.6), 1);
+        const p = Math.min(scrollY / (vh * 0.65), 1);
         const blur = p * 12;
         const scale = 1 + p * 0.15;
-        const opacity = 1 - p * 0.9;
+        const opacity = 1 - p * 0.92;
         const tBlur = blur + introTextBlur;
         const tOp = Math.max(0, opacity) * introEase;
 
         heroText.style.filter = `blur(${tBlur}px)`;
-        heroText.style.transform = `scale(${scale}) translateY(${introTextY}px)`;
+        heroText.style.transform = `scaleX(1.08) scale(${scale}) translateY(${introTextY}px)`;
         heroText.style.opacity = tOp;
 
         const aBlur = blur * 0.8 + introArrowBlur;
-        const aOp = Math.max(0, opacity) * 0.5 * introEase;
+        const aOp = Math.max(0, opacity) * 0.45 * introEase;
 
         heroArrow.style.filter = `blur(${aBlur}px)`;
         heroArrow.style.transform = `scale(${scale}) translateY(${p * 20 + introArrowY}px)`;
         heroArrow.style.opacity = aOp;
     } else {
         heroText.style.filter = 'blur(12px)';
-        heroText.style.transform = 'scale(1.15)';
+        heroText.style.transform = 'scaleX(1.08) scale(1.15)';
         heroText.style.opacity = '0';
 
         heroArrow.style.filter = 'blur(10px)';
@@ -683,10 +775,10 @@ function tick(now) {
         heroArrow.style.opacity = '0';
     }
 
-    const slide2Progress = Math.max(0, (scrollY - vh * 0.3) / (vh * 0.7));
+    const slide2Progress = Math.max(0, (scrollY - vh * 0.28) / (vh * 0.72));
     const p2 = Math.min(slide2Progress, 1);
     const blur2 = (1 - p2) * 12;
-    const scale2 = 0.85 + p2 * 0.15;
+    const scale2 = 0.88 + p2 * 0.12;
     const opacity2 = p2;
 
     linksText.style.filter = `blur(${blur2}px)`;
@@ -694,7 +786,7 @@ function tick(now) {
     linksText.style.opacity = opacity2;
 
     bottomText.style.transform = `translate(-50%, 0)`;
-    bottomText.style.opacity = 0.4;
+    bottomText.style.opacity = 0.34;
 
     gl.viewport(0, 0, width, height);
     const clearColors = [
@@ -766,7 +858,7 @@ document.addEventListener('dblclick', e => {
 });
 
 document.querySelectorAll('.links-block a').forEach(a => {
-    a.addEventListener('click', function(e) {
+    a.addEventListener('click', function() {
         this.classList.remove('flash-link');
         void this.offsetWidth;
         this.classList.add('flash-link');
