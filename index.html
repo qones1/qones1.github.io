@@ -133,7 +133,7 @@ html, body {
     font-weight: 900;
     letter-spacing: clamp(5px, 2.4vw, 16px);
     color: #ffffff;
-    text-shadow: 0 6px 38px rgba(0,0,0,0.85), 0 0 30px rgba(195,205,225,0.16);
+    text-shadow: 0 0 24px rgba(255, 255, 255, 0.14), 0 0 12px rgba(255, 255, 255, 0.09);
     pointer-events: none;
     text-transform: uppercase;
     line-height: 1.05;
@@ -144,9 +144,9 @@ html, body {
 .arrow {
     font-size: clamp(20px, 5vw, 28px);
     font-weight: 400;
-    color: rgba(255,255,255,0.42);
+    color: rgba(255, 255, 255, 0.42);
     animation: bounce 2.5s infinite ease-in-out;
-    text-shadow: 0 2px 12px rgba(0,0,0,0.65);
+    text-shadow: 0 0 8px rgba(255, 255, 255, 0.14);
     pointer-events: none;
     will-change: filter, transform, opacity;
     display: block;
@@ -195,7 +195,7 @@ html, body {
     border-radius: 7px;
     background: rgba(255, 255, 255, 0.08);
     border: 1px solid rgba(255, 255, 255, 0.2);
-    box-shadow: 0 0 12px rgba(200, 215, 235, 0.1);
+    box-shadow: 0 0 10px rgba(255, 255, 255, 0.08);
     transition: transform 0.38s cubic-bezier(0.22, 1, 0.36, 1);
     pointer-events: none;
 }
@@ -215,6 +215,7 @@ html, body {
     font-weight: 700;
     letter-spacing: 2px;
     color: rgba(215, 225, 240, 0.45);
+    text-shadow: 0 0 6px rgba(215, 225, 240, 0.10);
     text-transform: uppercase;
     cursor: pointer;
     transition: color 0.3s ease, text-shadow 0.3s ease;
@@ -222,7 +223,7 @@ html, body {
 
 .lang-btn.active {
     color: #ffffff;
-    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.85), 0 0 10px rgba(200, 215, 235, 0.35);
+    text-shadow: 0 0 8px rgba(255, 255, 255, 0.23);
 }
 
 #linksContent {
@@ -245,7 +246,7 @@ html, body {
     pointer-events: none;
     border-bottom: 1px solid rgba(255, 255, 255, 0.11);
     padding-bottom: 6px;
-    text-shadow: 0 2px 10px rgba(0, 0, 0, 0.92);
+    text-shadow: 0 0 8px rgba(220, 228, 242, 0.15);
 }
 .divider:first-child {
     margin-top: 0;
@@ -267,8 +268,8 @@ html, body {
     text-transform: uppercase;
     pointer-events: none;
     text-shadow:
-        0 2px 12px rgba(0, 0, 0, 0.96),
-        0 0 6px rgba(0, 0, 0, 0.85);
+        0 0 8px rgba(235, 240, 250, 0.18),
+        0 0 14px rgba(235, 240, 250, 0.08);
 }
 
 .links-block a {
@@ -283,18 +284,16 @@ html, body {
     border-bottom: 1px solid rgba(210, 220, 235, 0.24);
     padding-bottom: 2px;
     text-shadow:
-        0 2px 10px rgba(0, 0, 0, 0.95),
-        0 0 11px rgba(175, 185, 205, 0.26),
-        0 0 22px rgba(140, 150, 170, 0.15);
+        0 0 8px rgba(255, 255, 255, 0.17),
+        0 0 16px rgba(255, 255, 255, 0.10);
 }
 
 .links-block a:hover {
     color: #ffffff;
     border-bottom-color: rgba(225, 235, 250, 0.65);
     text-shadow:
-        0 2px 12px rgba(0, 0, 0, 0.98),
-        0 0 14px rgba(200, 210, 230, 0.44),
-        0 0 28px rgba(160, 170, 190, 0.24);
+        0 0 10px rgba(255, 255, 255, 0.28),
+        0 0 20px rgba(255, 255, 255, 0.15);
 }
 
 .bottom-text {
@@ -305,7 +304,7 @@ html, body {
     font-weight: 500;
     letter-spacing: clamp(2px, 1vw, 4.5px);
     color: rgba(200, 210, 225, 0.40);
-    text-shadow: 0 2px 10px rgba(0,0,0,0.85);
+    text-shadow: 0 0 7px rgba(200, 210, 225, 0.14);
     text-transform: uppercase;
     pointer-events: none;
     z-index: 12;
@@ -537,6 +536,8 @@ uniform vec2 u_offset;
 uniform float u_motion;
 uniform float u_scroll;
 uniform int u_tier;
+uniform float u_blobT[4];
+uniform float u_orbT[6];
 
 float hash(vec2 p) {
     vec3 p3 = fract(vec3(p.xyx) * 0.1031);
@@ -566,7 +567,7 @@ vec3 scene(vec2 p, float t) {
 
     for(int i=0; i<4; i++){
         float fi = float(i);
-        float tt = t * (0.55 + fi * 0.18) + fi * 3.927;
+        float tt = u_blobT[i];
         vec2 pos = vec2(
             sin(tt * 0.65 + fi * 1.7) * 0.52 + cos(tt * 0.3) * 0.18,
             cos(tt * 0.45 + fi * 2.2) * 0.38 + sin(tt * 0.25) * 0.15
@@ -579,7 +580,7 @@ vec3 scene(vec2 p, float t) {
 
     for(int i=0; i<6; i++){
         float fi = float(i);
-        float tt = (u_time * 0.11 + u_burst * 0.04) * 0.5 + fi * 1.047;
+        float tt = u_orbT[i];
         vec2 pos = vec2(
             sin(tt * 0.75 + fi * 2.1) * 0.48,
             cos(tt * 0.55 + fi * 1.4) * 0.38
@@ -785,6 +786,97 @@ function getTheme() {
 
 currentTheme = getTheme();
 
+const SEGMENTS_PER_LOOP = 6;
+const FULL_LOOP_RAD = Math.PI * 2.0;
+
+const EASING_TEMPLATES = [
+    // 0: Fade-In (мягкий разгон)
+    x => 0.28 * x + 0.72 * (x * x * (2.25 - 1.25 * x)),
+    // 1: Fade-Out (быстрый вход и плавное затухание к концу отрезка)
+    x => 0.28 * x + 0.72 * (1.0 - Math.pow(1.0 - x, 2.35)),
+    // 2: Fade-In-Out Sine (симметричная волна разгона и торможения)
+    x => 0.22 * x + 0.78 * (0.5 - 0.5 * Math.cos(Math.PI * x)),
+    // 3: Mid-Surge (плавный импульс ускорения в середине отрезка)
+    x => x + 0.15 * Math.sin(Math.PI * 2.0 * x),
+    // 4: Soft-Glide (спокойное обтекаемое скольжение)
+    x => x - 0.09 * Math.sin(Math.PI * 2.0 * x)
+];
+
+function buildSixSegmentSchedule(minDur, maxDur, prevCurve) {
+    const segs = [];
+    let lastC = prevCurve;
+    for (let i = 0; i < SEGMENTS_PER_LOOP; i++) {
+        const dur = minDur + Math.random() * (maxDur - minDur);
+        let curveIdx = Math.floor(Math.random() * EASING_TEMPLATES.length);
+        if (curveIdx === lastC) {
+            curveIdx = (curveIdx + 1 + Math.floor(Math.random() * (EASING_TEMPLATES.length - 1))) % EASING_TEMPLATES.length;
+        }
+        lastC = curveIdx;
+        segs.push({ dur, curveIdx });
+    }
+    return segs;
+}
+
+function createSegmentedSphere(initialOffset, minDur, maxDur, dampingSpeed) {
+    const startProgress = Math.random();
+    const startSeg = Math.floor(startProgress * SEGMENTS_PER_LOOP);
+    const schedule = buildSixSegmentSchedule(minDur, maxDur, -1);
+    return {
+        baseOffset: initialOffset,
+        minDur,
+        maxDur,
+        dampingSpeed,
+        cycleCount: 0,
+        segIdx: startSeg,
+        segElapsed: Math.random() * schedule[startSeg].dur,
+        schedule,
+        rawCyclePos: startProgress,
+        midCyclePos: startProgress,
+        smoothCyclePos: startProgress
+    };
+}
+
+function stepSegmentedSphere(s, dt) {
+    s.segElapsed += dt;
+    let curSeg = s.schedule[s.segIdx];
+
+    while (s.segElapsed >= curSeg.dur) {
+        s.segElapsed -= curSeg.dur;
+        s.segIdx++;
+        if (s.segIdx >= SEGMENTS_PER_LOOP) {
+            s.segIdx = 0;
+            s.cycleCount++;
+            const lastCurve = s.schedule[SEGMENTS_PER_LOOP - 1].curveIdx;
+            s.schedule = buildSixSegmentSchedule(s.minDur, s.maxDur, lastCurve);
+        }
+        curSeg = s.schedule[s.segIdx];
+    }
+
+    const localT = Math.min(Math.max(s.segElapsed / curSeg.dur, 0.0), 1.0);
+    const easedLocal = EASING_TEMPLATES[curSeg.curveIdx](localT);
+
+    // Каждая из 6 частей проходит ровно 1/6 круга со своей кривой и своим временем
+    s.rawCyclePos = s.cycleCount + (s.segIdx + easedLocal) / SEGMENTS_PER_LOOP;
+
+    // Двухступенчатое инерционное затухание между интервалами (без рывков)
+    const alpha1 = 1.0 - Math.exp(-dt * (s.dampingSpeed * 1.35));
+    const alpha2 = 1.0 - Math.exp(-dt * s.dampingSpeed);
+    s.midCyclePos += (s.rawCyclePos - s.midCyclePos) * alpha1;
+    s.smoothCyclePos += (s.midCyclePos - s.smoothCyclePos) * alpha2;
+
+    return s.baseOffset + s.smoothCyclePos * FULL_LOOP_RAD;
+}
+
+const blobStates = Array.from({ length: 4 }, (_, i) =>
+    createSegmentedSphere(i * 3.927, 1.8, 3.8, 3.2)
+);
+const orbStates = Array.from({ length: 6 }, (_, i) =>
+    createSegmentedSphere(i * 1.047, 1.4, 3.2, 3.6)
+);
+
+const blobTUniform = new Float32Array(4);
+const orbTUniform = new Float32Array(6);
+
 let burstVel = 0.0;
 let burstOffset = 0.0;
 let smoothBass = 0.2;
@@ -843,7 +935,9 @@ function rebuildShader() {
         u_offset: gl.getUniformLocation(bgProg, 'u_offset'),
         u_motion: gl.getUniformLocation(bgProg, 'u_motion'),
         u_scroll: gl.getUniformLocation(bgProg, 'u_scroll'),
-        u_tier: gl.getUniformLocation(bgProg, 'u_tier')
+        u_tier: gl.getUniformLocation(bgProg, 'u_tier'),
+        u_blobT: gl.getUniformLocation(bgProg, 'u_blobT'),
+        u_orbT: gl.getUniformLocation(bgProg, 'u_orbT')
     };
 }
 rebuildShader();
@@ -1003,6 +1097,13 @@ function tick(now) {
 
     burstOffset += burstVel * dt;
 
+    for (let i = 0; i < 4; i++) {
+        blobTUniform[i] = stepSegmentedSphere(blobStates[i], dt);
+    }
+    for (let i = 0; i < 6; i++) {
+        orbTUniform[i] = stepSegmentedSphere(orbStates[i], dt);
+    }
+
     targetBgX *= Math.exp(-dt * 3.8);
     targetBgY *= Math.exp(-dt * 3.8);
     bgOffsetX += (targetBgX - bgOffsetX) * 0.12;
@@ -1108,6 +1209,8 @@ function tick(now) {
     gl.uniform1f(bgLocs.u_motion, clampedMotion);
     gl.uniform1f(bgLocs.u_scroll, smoothScrollP);
     gl.uniform1i(bgLocs.u_tier, perfTier);
+    gl.uniform1fv(bgLocs.u_blobT, blobTUniform);
+    gl.uniform1fv(bgLocs.u_orbT, orbTUniform);
     gl.bindVertexArray(quadVAO);
     gl.drawArrays(gl.TRIANGLES, 0, 6);
 
