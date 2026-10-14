@@ -103,6 +103,35 @@ html, body {
     animation: linkFlash 0.6s ease forwards;
 }
 
+.toast {
+    position: fixed;
+    top: clamp(24px, 5vh, 44px);
+    left: 50%;
+    transform: translate3d(-50%, -18px, 0) scale(0.96);
+    background: rgba(14, 14, 18, 0.88);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 0 24px rgba(0, 0, 0, 0.7), 0 0 12px rgba(255, 255, 255, 0.1);
+    color: #ffffff;
+    padding: 9px 20px;
+    border-radius: 999px;
+    font-size: clamp(9px, 2.2vw, 11px);
+    font-weight: 700;
+    letter-spacing: 2.2px;
+    text-transform: uppercase;
+    pointer-events: none;
+    z-index: 100;
+    opacity: 0;
+    transition: opacity 0.32s cubic-bezier(0.22, 1, 0.36, 1), transform 0.32s cubic-bezier(0.22, 1, 0.36, 1);
+    text-shadow: 0 0 10px rgba(255, 255, 255, 0.38);
+    white-space: nowrap;
+}
+.toast.show {
+    opacity: 1;
+    transform: translate3d(-50%, 0, 0) scale(1);
+}
+
 .container {
     height: 100vh;
     scroll-snap-type: y mandatory;
@@ -228,7 +257,7 @@ html, body {
     font-weight: 700;
     letter-spacing: 2px;
     color: rgba(215, 225, 240, 0.45);
-    text-shadow: 0 0 6px rgba(215, 225, 240, 0.10);
+    text-shadow: 0 0 6px rgba(215, 225, 240, 0.20);
     text-transform: uppercase;
     cursor: pointer;
     transition: color 0.3s ease, text-shadow 0.3s ease;
@@ -236,7 +265,7 @@ html, body {
 
 .lang-btn.active {
     color: #ffffff;
-    text-shadow: 0 0 8px rgba(255, 255, 255, 0.23);
+    text-shadow: 0 0 8px rgba(255, 255, 255, 0.46);
 }
 
 #linksContent {
@@ -259,7 +288,9 @@ html, body {
     pointer-events: none;
     border-bottom: 1px solid rgba(255, 255, 255, 0.11);
     padding-bottom: 6px;
-    text-shadow: 0 0 8px rgba(220, 228, 242, 0.15);
+    text-shadow:
+        0 0 8px rgba(220, 228, 242, 0.30),
+        0 0 16px rgba(220, 228, 242, 0.16);
 }
 .divider:first-child {
     margin-top: 0;
@@ -281,8 +312,8 @@ html, body {
     text-transform: uppercase;
     pointer-events: none;
     text-shadow:
-        0 0 8px rgba(235, 240, 250, 0.18),
-        0 0 14px rgba(235, 240, 250, 0.08);
+        0 0 8px rgba(235, 240, 250, 0.36),
+        0 0 14px rgba(235, 240, 250, 0.16);
 }
 
 .links-block a {
@@ -297,16 +328,16 @@ html, body {
     border-bottom: 1px solid rgba(210, 220, 235, 0.24);
     padding-bottom: 2px;
     text-shadow:
-        0 0 8px rgba(255, 255, 255, 0.17),
-        0 0 16px rgba(255, 255, 255, 0.10);
+        0 0 8px rgba(255, 255, 255, 0.34),
+        0 0 16px rgba(255, 255, 255, 0.20);
 }
 
 .links-block a:hover {
     color: #ffffff;
     border-bottom-color: rgba(225, 235, 250, 0.65);
     text-shadow:
-        0 0 10px rgba(255, 255, 255, 0.28),
-        0 0 20px rgba(255, 255, 255, 0.15);
+        0 0 10px rgba(255, 255, 255, 0.56),
+        0 0 20px rgba(255, 255, 255, 0.30);
 }
 
 .bottom-text {
@@ -331,6 +362,7 @@ html, body {
 </head>
 <body>
 
+<div id="toast" class="toast"></div>
 <div id="fadeOverlay"></div>
 <div id="vignetteOverlay"></div>
 <canvas id="glCanvas"></canvas>
@@ -370,7 +402,7 @@ const SITE_DATA = [
     {
         category: { ru: 'ПРОЕКТЫ', en: 'PROJECTS' },
         items: [
-            { ru: 'hzAPI – анализ тг акков', en: 'hzAPI – analys tg accs', text: '@XUCXBOT', url: 'https://t.me/xucxbot', external: true },
+            { ru: 'hzAPI – анализ тг акков', en: 'hzAPI – analysis tg profile', text: '@XUCXBOT', url: 'https://t.me/xucxbot', external: true },
             { ru: 'ПЛАГИНЫ – для extera', en: 'PLUGINS – for extera', text: '@HZZZPLUGINS', url: 'https://t.me/HzzzPlugins', external: true },
             { ru: 'ОСНОВНОЙ КАНАЛ', en: 'MAIN CHANNEL', text: '@UZUQO', url: 'https://t.me/uzuqo', external: true }
         ]
@@ -378,7 +410,7 @@ const SITE_DATA = [
     {
         category: { ru: 'ДРУГОЕ', en: 'OTHER' },
         items: [
-            { ru: 'ТОН (gram)', en: 'TON (gram)', text: 'fuckyoupayme.ton', url: 'ton://transfer/UQBIsbxjOu2KVjcSNi5EIOzK-BHMcnHhTcCcpWBzh3chT6aU', external: false }
+            { ru: 'ТОН (gram)', en: 'TON (gram)', text: 'fuckyoupayme.ton', copyText: 'UQBIsbxjOu2KVjcSNi5EIOzK-BHMcnHhTcCcpWBzh3chT6aU', isCopy: true }
         ]
     }
 ];
@@ -399,14 +431,64 @@ function detectInitialLang() {
 let currentLang = detectInitialLang();
 const langSwitchEl = document.getElementById('langSwitch');
 const linksContentEl = document.getElementById('linksContent');
+const toastEl = document.getElementById('toast');
+let toastTimer = null;
+
+function showToast(msg) {
+    if (!toastEl) return;
+    toastEl.textContent = msg;
+    toastEl.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => {
+        toastEl.classList.remove('show');
+    }, 1800);
+}
+
+function copyToClipboard(val) {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        return navigator.clipboard.writeText(val).catch(() => fallbackCopy(val));
+    }
+    return fallbackCopy(val);
+}
+
+function fallbackCopy(val) {
+    return new Promise((resolve, reject) => {
+        try {
+            const ta = document.createElement('textarea');
+            ta.value = val;
+            ta.style.position = 'fixed';
+            ta.style.opacity = '0';
+            ta.style.pointerEvents = 'none';
+            document.body.appendChild(ta);
+            ta.focus();
+            ta.select();
+            const res = document.execCommand('copy');
+            document.body.removeChild(ta);
+            if (res) resolve();
+            else reject();
+        } catch (e) {
+            reject(e);
+        }
+    });
+}
 
 function bindLinkFlash() {
     linksContentEl.querySelectorAll('a').forEach(a => {
-        a.addEventListener('click', function() {
+        a.addEventListener('click', function(e) {
             this.classList.remove('flash-link');
             void this.offsetWidth;
             this.classList.add('flash-link');
             setTimeout(() => this.classList.remove('flash-link'), 600);
+
+            if (this.hasAttribute('data-copy')) {
+                e.preventDefault();
+                const copyData = this.getAttribute('data-copy');
+                copyToClipboard(copyData).then(() => {
+                    showToast(currentLang === 'ru' ? 'ТЕКСТ СКОПИРОВАН' : 'TEXT COPIED');
+                }).catch(() => {
+                    showToast(currentLang === 'ru' ? 'ТЕКСТ СКОПИРОВАН' : 'TEXT COPIED');
+                });
+            }
         });
     });
 }
@@ -420,8 +502,13 @@ function renderLinks(lang) {
         for (let j = 0; j < block.items.length; j++) {
             const item = block.items[j];
             const label = item[lang] || item.en;
-            const targetAttr = item.external ? ' target="_blank" rel="noopener"' : '';
-            html += `<div class="link-row"><span class="link-label">${label}</span><a href="${item.url}"${targetAttr}>${item.text}</a></div>`;
+            if (item.isCopy) {
+                const copyData = item.copyText || item.text;
+                html += `<div class="link-row"><span class="link-label">${label}</span><a href="javascript:void(0)" data-copy="${copyData}">${item.text}</a></div>`;
+            } else {
+                const targetAttr = item.external ? ' target="_blank" rel="noopener"' : '';
+                html += `<div class="link-row"><span class="link-label">${label}</span><a href="${item.url}"${targetAttr}>${item.text}</a></div>`;
+            }
         }
     }
     linksContentEl.innerHTML = html;
