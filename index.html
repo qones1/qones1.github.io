@@ -123,6 +123,8 @@ html, body {
     flex-direction: column;
     padding: 0 24px;
     perspective: 1000px;
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
 }
 
 .hero {
@@ -137,8 +139,11 @@ html, body {
     pointer-events: none;
     text-transform: uppercase;
     line-height: 1.05;
-    transform: scaleX(1.08);
-    will-change: filter, transform, opacity;
+    transform: translate3d(0, 0, 0) scale3d(1.08, 1, 1);
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+    transform-style: preserve-3d;
+    will-change: transform, opacity, filter;
 }
 
 .arrow {
@@ -148,25 +153,33 @@ html, body {
     animation: bounce 2.5s infinite ease-in-out;
     text-shadow: 0 0 8px rgba(255, 255, 255, 0.14);
     pointer-events: none;
-    will-change: filter, transform, opacity;
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+    will-change: transform, opacity, filter;
     display: block;
 }
 @keyframes bounce {
-    0%, 100% { transform: translateY(0); opacity: 0.22; }
-    50% { transform: translateY(12px); opacity: 0.55; }
+    0%, 100% { transform: translate3d(0, 0, 0); opacity: 0.22; }
+    50% { transform: translate3d(0, 12px, 0); opacity: 0.55; }
 }
 
 .arrow-down {
     margin-top: clamp(95px, 20vh, 170px);
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+    will-change: transform, opacity, filter;
 }
 
 .second {
     justify-content: center;
+    will-change: transform;
 }
 
 .links-block {
     width: min(88vw, 370px);
     font-size: clamp(12px, 3.1vw, 15px);
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
     will-change: filter, transform, opacity;
 }
 
@@ -325,7 +338,9 @@ html, body {
 <div class="container" id="scroller">
     <section class="section hero" id="slide1">
         <div class="hero-text" id="heroText">hzzz</div>
-        <div class="arrow arrow-down" id="heroArrow">↓</div>
+        <div class="arrow-down" id="heroArrowWrap">
+            <span class="arrow" id="heroArrow">↓</span>
+        </div>
     </section>
 
     <section class="section second" id="slide2">
@@ -347,7 +362,7 @@ html, body {
 <script>
 const SITE_DATA = [
     {
-        category: { ru: 'СЕТЬ', en: 'NETWORK' },
+        category: { ru: 'КОНТАКТЫ', en: 'NETWORK' },
         items: [
             { ru: 'ТГ', en: 'TG', text: '@EXOSEO', url: 'https://t.me/EXOSEO', external: true },
             { ru: 'ДИСКОРД', en: 'DISCORD', text: '@MAKOSKA69', url: 'https://discord.gg/YycWUSeb', external: true }
@@ -790,15 +805,10 @@ const SEGMENTS_PER_LOOP = 6;
 const FULL_LOOP_RAD = Math.PI * 2.0;
 
 const EASING_TEMPLATES = [
-    // 0: Fade-In (мягкий разгон)
     x => 0.28 * x + 0.72 * (x * x * (2.25 - 1.25 * x)),
-    // 1: Fade-Out (быстрый вход и плавное затухание к концу отрезка)
     x => 0.28 * x + 0.72 * (1.0 - Math.pow(1.0 - x, 2.35)),
-    // 2: Fade-In-Out Sine (симметричная волна разгона и торможения)
     x => 0.22 * x + 0.78 * (0.5 - 0.5 * Math.cos(Math.PI * x)),
-    // 3: Mid-Surge (плавный импульс ускорения в середине отрезка)
     x => x + 0.15 * Math.sin(Math.PI * 2.0 * x),
-    // 4: Soft-Glide (спокойное обтекаемое скольжение)
     x => x - 0.09 * Math.sin(Math.PI * 2.0 * x)
 ];
 
@@ -855,10 +865,8 @@ function stepSegmentedSphere(s, dt) {
     const localT = Math.min(Math.max(s.segElapsed / curSeg.dur, 0.0), 1.0);
     const easedLocal = EASING_TEMPLATES[curSeg.curveIdx](localT);
 
-    // Каждая из 6 частей проходит ровно 1/6 круга со своей кривой и своим временем
     s.rawCyclePos = s.cycleCount + (s.segIdx + easedLocal) / SEGMENTS_PER_LOOP;
 
-    // Двухступенчатое инерционное затухание между интервалами (без рывков)
     const alpha1 = 1.0 - Math.exp(-dt * (s.dampingSpeed * 1.35));
     const alpha2 = 1.0 - Math.exp(-dt * s.dampingSpeed);
     s.midCyclePos += (s.rawCyclePos - s.midCyclePos) * alpha1;
@@ -889,6 +897,7 @@ let targetBgX = 0, targetBgY = 0;
 let prevBgX = 0, prevBgY = 0;
 let motionEnergy = 0;
 let smoothScrollP = 0;
+let virtualScrollY = 0;
 let lastGamma = null, lastBeta = null;
 
 let perfTier = 2;
@@ -961,7 +970,7 @@ const overlay = document.getElementById('fadeOverlay');
 const vignetteOverlay = document.getElementById('vignetteOverlay');
 const scroller = document.getElementById('scroller');
 const heroText = document.getElementById('heroText');
-const heroArrow = document.getElementById('heroArrow');
+const heroArrowWrap = document.getElementById('heroArrowWrap');
 const linksText = document.getElementById('linksText');
 const bottomText = document.getElementById('bottomText');
 const slide2 = document.getElementById('slide2');
@@ -975,6 +984,8 @@ const state = {
 const stopAutoScroll = () => {
     if (state.autoActive && !state.autoDone) {
         state.autoDone = true;
+        slide2.style.transform = 'translate3d(0, 0px, 0)';
+        scroller.scrollTop = Math.round(virtualScrollY);
         scroller.style.scrollSnapType = 'y mandatory';
     }
 };
@@ -1120,30 +1131,49 @@ function tick(now) {
     const introP = Math.min(introElapsed / INTRO_DURATION, 1);
     const introEase = easeOutCubic(introP);
 
-    if (state.autoActive && !state.autoDone && now >= state.autoStart) {
-        const targetY = slide2.offsetTop;
-        const elapsed = now - state.autoStart;
-        const progress = Math.min(elapsed / SCROLL_DURATION, 1);
-        const eased = strictAcceleratingCurve(progress);
-        scroller.scrollTop = targetY * eased;
-        if (progress >= 1) {
-            state.autoDone = true;
-            scroller.scrollTop = targetY;
-            scroller.style.scrollSnapType = 'y mandatory';
-            void scroller.offsetHeight;
+    const vh = Math.max(window.innerHeight, 1);
+    const targetY = slide2.offsetTop || vh;
+
+    // Субпиксельный GPU-скролл во время интро без ступенчатого округления scrollTop
+    if (state.autoActive && !state.autoDone) {
+        if (now >= state.autoStart) {
+            const elapsed = now - state.autoStart;
+            const progress = Math.min(elapsed / SCROLL_DURATION, 1);
+            const eased = strictAcceleratingCurve(progress);
+            virtualScrollY = targetY * eased;
+
+            if (progress >= 1) {
+                state.autoDone = true;
+                virtualScrollY = targetY;
+                slide2.style.transform = 'translate3d(0, 0px, 0)';
+                scroller.scrollTop = targetY;
+                scroller.style.scrollSnapType = 'y mandatory';
+                void scroller.offsetHeight;
+            } else {
+                slide2.style.transform = `translate3d(0, ${-virtualScrollY}px, 0)`;
+            }
+        } else {
+            virtualScrollY = 0;
+        }
+    } else {
+        const domScroll = scroller.scrollTop;
+        const smoothAlpha = 1.0 - Math.exp(-dt * 28.0);
+        virtualScrollY += (domScroll - virtualScrollY) * smoothAlpha;
+        if (Math.abs(domScroll - virtualScrollY) < 0.05) {
+            virtualScrollY = domScroll;
         }
     }
 
-    const scrollY = scroller.scrollTop;
-    const vh = Math.max(window.innerHeight, 1);
+    const scrollY = virtualScrollY;
     const totalScrollRatio = Math.min(Math.max(scrollY / vh, 0), 1);
     smoothScrollP += (totalScrollRatio - smoothScrollP) * 0.14;
 
     vignetteOverlay.style.opacity = (1.0 - smoothScrollP * 0.78).toFixed(3);
 
-    const introTextY = (1 - introEase) * -32;
+    // Однонаправленное плавное всплытие без противофазы
+    const introTextY = (1 - introEase) * 22;
     const introTextBlur = (1 - introEase) * 10;
-    const introArrowY = (1 - introEase) * 32;
+    const introArrowY = (1 - introEase) * 26;
     const introArrowBlur = (1 - introEase) * 7;
 
     if (scrollY < vh) {
@@ -1153,27 +1183,29 @@ function tick(now) {
         const opacity = 1 - Math.pow(p, 1.15) * 0.96;
         const tBlur = blur + introTextBlur;
         const tOp = Math.max(0, opacity) * introEase;
-        const slowDriftY = scrollY * 0.68 + introTextY;
 
-        heroText.style.filter = `blur(${tBlur}px)`;
-        heroText.style.transform = `translateY(${slowDriftY}px) scaleX(1.08) scale(${scale})`;
-        heroText.style.opacity = tOp;
+        // Во время GPU-интро slide1 стоит на месте, поэтому двигаем сам текст мягко вверх
+        const heroTranslateY = (!state.autoDone ? -scrollY * 0.34 : 0) + introTextY;
+        const arrowTranslateY = (!state.autoDone ? -scrollY * 0.44 : 0) + p * 18 + introArrowY;
+
+        heroText.style.filter = tBlur > 0.04 ? `blur(${tBlur.toFixed(2)}px)` : 'blur(0px)';
+        heroText.style.transform = `translate3d(0, ${heroTranslateY.toFixed(2)}px, 0) scale3d(${(scale * 1.08).toFixed(4)}, ${scale.toFixed(4)}, 1)`;
+        heroText.style.opacity = tOp.toFixed(4);
 
         const aBlur = blur * 0.85 + introArrowBlur;
         const aOp = Math.max(0, opacity) * 0.45 * introEase;
-        const arrowDriftY = scrollY * 0.55 + p * 18 + introArrowY;
 
-        heroArrow.style.filter = `blur(${aBlur}px)`;
-        heroArrow.style.transform = `translateY(${arrowDriftY}px) scale(${scale})`;
-        heroArrow.style.opacity = aOp;
+        heroArrowWrap.style.filter = aBlur > 0.04 ? `blur(${aBlur.toFixed(2)}px)` : 'blur(0px)';
+        heroArrowWrap.style.transform = `translate3d(0, ${arrowTranslateY.toFixed(2)}px, 0) scale3d(${scale.toFixed(4)}, ${scale.toFixed(4)}, 1)`;
+        heroArrowWrap.style.opacity = aOp.toFixed(4);
     } else {
         heroText.style.filter = 'blur(14px)';
-        heroText.style.transform = 'scaleX(1.08) scale(1.12)';
+        heroText.style.transform = 'translate3d(0, 0px, 0) scale3d(1.2096, 1.12, 1)';
         heroText.style.opacity = '0';
 
-        heroArrow.style.filter = 'blur(10px)';
-        heroArrow.style.transform = 'scale(1.1) translateY(20px)';
-        heroArrow.style.opacity = '0';
+        heroArrowWrap.style.filter = 'blur(10px)';
+        heroArrowWrap.style.transform = 'translate3d(0, 20px, 0) scale3d(1.1, 1.1, 1)';
+        heroArrowWrap.style.opacity = '0';
     }
 
     const slide2Progress = Math.max(0, (scrollY - vh * 0.25) / (vh * 0.75));
@@ -1182,11 +1214,11 @@ function tick(now) {
     const scale2 = 0.88 + p2 * 0.12;
     const opacity2 = p2;
 
-    linksText.style.filter = `blur(${blur2}px)`;
-    linksText.style.transform = `scale(${scale2})`;
-    linksText.style.opacity = opacity2;
+    linksText.style.filter = blur2 > 0.04 ? `blur(${blur2.toFixed(2)}px)` : 'blur(0px)';
+    linksText.style.transform = `translate3d(0, 0px, 0) scale3d(${scale2.toFixed(4)}, ${scale2.toFixed(4)}, 1)`;
+    linksText.style.opacity = opacity2.toFixed(4);
 
-    bottomText.style.transform = `translate(-50%, 0)`;
+    bottomText.style.transform = `translate3d(-50%, 0, 0)`;
     bottomText.style.opacity = 0.40;
 
     gl.viewport(0, 0, width, height);
@@ -1221,7 +1253,7 @@ requestAnimationFrame(tick);
 
 function getTextParent(el) {
     if (el.closest('.lang-switch')) return null;
-    return el.closest('.hero-text, .arrow, .links-block, .bottom-text');
+    return el.closest('.hero-text, .arrow-down, .links-block, .bottom-text');
 }
 
 let lastTapTime = 0;
