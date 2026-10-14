@@ -370,19 +370,18 @@ const SITE_DATA = [
     {
         category: { ru: 'ПРОЕКТЫ', en: 'PROJECTS' },
         items: [
-            { ru: 'hzAPI - analys tg acc', en: 'hzAPI - анализ тг акков', text: '@FVNETBOT', url: 'https://t.me/xucxbot', external: true },
-            { ru: 'ПЛАГИНЫ', en: 'PLUGINS', text: '@HZZZPLUGINS', url: 'https://t.me/HzzzPlugins', external: true },
+            { ru: 'hzAPI – анализ тг акков', en: 'hzAPI – analys tg accs', text: '@XUCXBOT', url: 'https://t.me/xucxbot', external: true },
+            { ru: 'ПЛАГИНЫ – для extera', en: 'PLUGINS – for extera', text: '@HZZZPLUGINS', url: 'https://t.me/HzzzPlugins', external: true },
             { ru: 'ОСНОВНОЙ КАНАЛ', en: 'MAIN CHANNEL', text: '@UZUQO', url: 'https://t.me/uzuqo', external: true }
         ]
     },
     {
         category: { ru: 'ДРУГОЕ', en: 'OTHER' },
         items: [
-            { ru: 'ТОН', en: 'TON', text: 'fuckyoupayme.ton', url: 'ton://transfer/UQBIsbxjOu2KVjcSNi5EIOzK-BHMcnHhTcCcpWBzh3chT6aU', external: false }
+            { ru: 'ТОН (gram)', en: 'TON (gram)', text: 'fuckyoupayme.ton', url: 'ton://transfer/UQBIsbxjOu2KVjcSNi5EIOzK-BHMcnHhTcCcpWBzh3chT6aU', external: false }
         ]
     }
 ];
-
 
 function detectInitialLang() {
     try {
@@ -577,9 +576,9 @@ const vec3 blobColors[4] = ${blobC};
 vec3 scene(vec2 p, float t) {
     vec3 c = ${baseC};
 
-    vec2 pBlobs = p + u_offset * 1.0;
-    vec2 pOrbs  = p + u_offset * 1.15;
-    vec2 pStars = p + u_offset * 0.65;
+    vec2 pBlobs = p + u_offset * 1.25;
+    vec2 pOrbs  = p + u_offset * 1.4375;
+    vec2 pStars = p + u_offset * 0.8125;
 
     for(int i=0; i<4; i++){
         float fi = float(i);
@@ -631,6 +630,54 @@ vec3 scene(vec2 p, float t) {
     }
 
     return c;
+}
+
+vec2 evalLensOptics(vec2 nc, vec2 aspectP, vec2 lensOff, vec2 autoDrift, float ringPos) {
+    vec2 axis1 = normalize(vec2(-0.75, 0.65) + lensOff * 1.375 + autoDrift);
+    vec2 axis2 = normalize(vec2(0.80, -0.60) - lensOff * 1.375 - autoDrift * 0.85);
+    vec2 axis3 = normalize(vec2(0.58, 0.81) + vec2(-lensOff.y, lensOff.x) * 1.25 + autoDrift * 0.72);
+    vec2 axis4 = normalize(vec2(-0.68, -0.73) - vec2(-lensOff.y, lensOff.x) * 1.15 - autoDrift * 0.64);
+
+    vec2 normDir = normalize(nc + 1e-4);
+    float r = length(nc);
+
+    float ang1 = max(0.0, dot(normDir, axis1));
+    float ang2 = max(0.0, dot(normDir, axis2));
+    float ang3 = max(0.0, dot(normDir, axis3));
+    float ang4 = max(0.0, dot(normDir, axis4));
+
+    float arc1 = exp(-pow((r - ringPos) * 3.4, 2.0));
+    float arc2 = exp(-pow((r - (ringPos - 0.12)) * 2.8, 2.0));
+    float arc3 = exp(-pow((r - (ringPos + 0.075)) * 4.6, 2.0));
+    float arc4 = exp(-pow((r - (ringPos - 0.24)) * 3.1, 2.0));
+
+    float f1 = pow(ang1, 5.0) * arc1;
+    float f2 = pow(ang2, 6.0) * arc2;
+    float f3 = pow(ang3, 9.0) * arc3;
+    float f4 = pow(ang4, 7.0) * arc4;
+
+    float sweepDist = abs(dot(aspectP, vec2(axis1.y, -axis1.x)) - 0.11 * sin(r * 2.4 - u_time * 0.48));
+    float anamorphic = exp(-sweepDist * 14.0) * exp(-pow((r - 0.68) * 2.5, 2.0)) * pow(ang1, 3.0);
+
+    float arcs = f1 * 0.17 + f2 * 0.13 + f3 * 0.11 + f4 * 0.08 + anamorphic * 0.075;
+
+    vec2 ghostAxis = normalize(vec2(-0.72, 0.68) + lensOff * 1.45 + autoDrift * 1.15);
+    vec2 perpAxis = vec2(-ghostAxis.y, ghostAxis.x);
+
+    vec2 g1Center = ghostAxis * (0.43 + 0.04 * sin(u_time * 0.52)) + perpAxis * 0.03;
+    float g1Dist = length(aspectP - g1Center);
+    float g1Ring = exp(-pow((g1Dist - 0.15) * 22.0, 2.0)) * 0.58 + smoothstep(0.16, 0.0, g1Dist) * 0.22;
+
+    vec2 g2Center = -ghostAxis * (0.57 + 0.05 * cos(u_time * 0.44)) - perpAxis * 0.04;
+    float g2Dist = length(aspectP - g2Center);
+    float g2Ring = exp(-pow((g2Dist - 0.095) * 28.0, 2.0)) * 0.62 + smoothstep(0.10, 0.0, g2Dist) * 0.28;
+
+    vec2 g3Center = -ghostAxis * (0.27 + 0.035 * sin(u_time * 0.64)) + perpAxis * 0.025;
+    float g3Dist = length(aspectP - g3Center);
+    float g3Disc = exp(-g3Dist * g3Dist / 0.0022) * 0.52 + exp(-pow((g3Dist - 0.052) * 34.0, 2.0)) * 0.36;
+
+    float ghosts = g1Ring * 0.11 + g2Ring * 0.09 + g3Disc * 0.085;
+    return vec2(arcs, ghosts);
 }
 
 void main(){
@@ -694,27 +741,41 @@ void main(){
     softVig = clamp(softVig, minBright, 1.0);
     col *= softVig;
 
-    vec2 lensOffset = u_offset * 0.45;
+    vec2 lensOffset = u_offset * 0.5625;
     vec2 normC = (uv - 0.5) * 2.0;
-    vec2 flareAxis1 = normalize(vec2(-0.75, 0.65) + lensOffset * 1.1);
-    vec2 flareAxis2 = normalize(vec2(0.80, -0.60) - lensOffset * 1.1);
-    float ang1 = max(0.0, dot(normalize(normC + 1e-4), flareAxis1));
-    float ang2 = max(0.0, dot(normalize(normC + 1e-4), flareAxis2));
+    vec2 cleanP = normC;
+    cleanP.x *= aspect;
 
-    float ringPos = mix(0.76, 0.92, u_scroll);
-    float lensArc = exp(-pow((length(normC) - ringPos) * 3.4, 2.0));
-    float flare1 = pow(ang1, 5.0) * lensArc;
-    float flare2 = pow(ang2, 6.0) * exp(-pow((length(normC) - (ringPos - 0.12)) * 2.8, 2.0));
+    vec2 autoLensDrift = vec2(
+        sin(u_time * 0.42 + u_blobT[0] * 0.16) * 0.13 + cos(u_time * 0.27) * 0.05,
+        cos(u_time * 0.36 + u_blobT[1] * 0.16) * 0.13 + sin(u_time * 0.31) * 0.05
+    );
 
-    float totalGlint = (flare1 * 0.17 + flare2 * 0.13) * (0.85 + u_bass * 0.4 + u_motion * 0.35);
+    float ringBreath = sin(u_time * 0.62) * 0.032 + u_bass * 0.025;
+    float ringPos = mix(0.76, 0.92, u_scroll) + ringBreath;
+
+    float parallaxRatio = clamp(length(u_offset) / 0.175, 0.0, 1.25);
+    float flareCA = 0.015 + parallaxRatio * 0.036 + u_motion * 0.024;
+    vec2 caDir = normalize(normC + u_offset * 2.4 + 1e-4) * flareCA;
+
+    vec2 optR = evalLensOptics(normC * (1.0 - flareCA * 0.85) + caDir, cleanP * (1.0 - flareCA * 0.85) + caDir * vec2(aspect, 1.0), lensOffset, autoLensDrift, ringPos);
+    vec2 optG = evalLensOptics(normC, cleanP, lensOffset, autoLensDrift, ringPos);
+    vec2 optB = evalLensOptics(normC * (1.0 + flareCA * 0.85) - caDir, cleanP * (1.0 + flareCA * 0.85) - caDir * vec2(aspect, 1.0), lensOffset, autoLensDrift, ringPos);
+
+    float energyMod = 0.86 + u_bass * 0.42 + u_motion * 0.38 + 0.08 * sin(u_time * 1.1);
+    vec3 arcChroma = vec3(optR.x, optG.x, optB.x) * energyMod;
+    vec3 ghostChroma = vec3(optR.y, optG.y, optB.y) * (0.82 + u_treble * 0.38 + parallaxRatio * 0.28);
 
     vec3 opticColor = mix(vec3(0.78, 0.84, 0.94), ${flareTint}, 0.55);
-    col += opticColor * totalGlint;
+    vec3 ghostTint = mix(${flareTint}, vec3(0.72, 0.90, 1.0), 0.42);
+    vec3 spectralWeight = vec3(1.08, 0.97, 1.14);
+
+    col += (arcChroma * opticColor + ghostChroma * ghostTint) * spectralWeight;
+
+    float totalGlint = dot(arcChroma + ghostChroma, vec3(0.333));
 
     if (u_tier >= 1) {
-        vec2 cleanP = (uv - 0.5) * 2.0;
-        cleanP.x *= aspect;
-        vec2 lensUV = cleanP - lensOffset * 0.5;
+        vec2 lensUV = cleanP - lensOffset * 0.625 - autoLensDrift * 0.28;
         float polarR = length(lensUV);
 
         float fineScratches = 0.0;
@@ -725,31 +786,37 @@ void main(){
             fineScratches = smoothstep(0.76, 0.96, scratch1 * scratch2) * smoothstep(0.25, 0.95, polarR);
         }
 
-        vec2 dustGrid = lensUV * 18.0;
+        vec2 dustGrid = lensUV * 18.0 + vec2(sin(u_time * 0.18), cos(u_time * 0.15)) * 0.35;
         vec2 dustId = floor(dustGrid);
         vec2 dustF = fract(dustGrid) - 0.5;
         float dSeed = hash(dustId);
         vec2 dPos = (vec2(hash(dustId + 2.1), hash(dustId + 5.7)) - 0.5) * 0.6;
         float dDist = length(dustF - dPos);
+        float dShift = length(dustF - dPos + caDir * 2.8);
         float microSpecks = smoothstep(0.09, 0.015, dDist) * step(0.86, dSeed) * smoothstep(0.18, 0.85, polarR);
+        float microSpecksCA = smoothstep(0.095, 0.015, dShift) * step(0.86, dSeed) * smoothstep(0.18, 0.85, polarR);
 
         vec2 shardGrid = lensUV * 7.5 + vec2(t * 0.08, -t * 0.06);
         vec2 shardId = floor(shardGrid);
         vec2 shardF = fract(shardGrid) - 0.5;
         float sSeed = hash(shardId + 11.3);
         float shardDist = abs(shardF.x * 0.8 + shardF.y * 0.6) + abs(shardF.x * 0.4 - shardF.y * 0.9) * 0.35;
+        vec2 shardFCA = shardF - caDir * 1.9;
+        float shardDistCA = abs(shardFCA.x * 0.8 + shardFCA.y * 0.6) + abs(shardFCA.x * 0.4 - shardFCA.y * 0.9) * 0.35;
         float sharpShard = smoothstep(0.085, 0.01, shardDist) * step(0.89, sSeed) * smoothstep(0.32, 1.05, polarR);
+        float sharpShardCA = smoothstep(0.09, 0.01, shardDistCA) * step(0.89, sSeed) * smoothstep(0.32, 1.05, polarR);
 
         float localLight = clamp(luma * 2.3 + totalGlint * 3.5 + 0.14 * u_scroll, 0.0, 1.5);
         float imperfections = (fineScratches * 0.18 + microSpecks * 0.34 + sharpShard * 0.42) * localLight * (0.65 + 0.55 * u_scroll);
 
+        float caBoost = 1.0 + parallaxRatio * 0.55 + u_motion * 0.35;
         vec3 chromaShard = vec3(
-            sharpShard * 0.45 + microSpecks * 0.25,
-            (fineScratches * 0.16 + microSpecks * 0.28) * 0.9,
-            sharpShard * 0.65 + fineScratches * 0.22 + microSpecks * 0.35
+            (sharpShardCA * 0.52 + microSpecksCA * 0.30) * caBoost,
+            (fineScratches * 0.16 + microSpecks * 0.28 + sharpShard * 0.22) * 0.9,
+            (sharpShard * 0.68 + fineScratches * 0.22 + microSpecks * 0.38) * caBoost
         ) * localLight * (0.7 + 0.5 * u_scroll);
 
-        col += mix(chromaShard, ${flareTint} * imperfections, 0.5);
+        col += mix(chromaShard, ${flareTint} * imperfections, 0.42);
     }
 
     float grain = (hash(uv * 500.0 + u_time) - 0.5) * (0.015 + u_treble * 0.014);
@@ -912,7 +979,7 @@ document.addEventListener('visibilitychange', () => {
     lastTickTime = performance.now();
 });
 
-const MAX_OFFSET = 0.14;
+const MAX_OFFSET = 0.175;
 function addParallaxDelta(dx, dy, sens) {
     const currentDist = Math.hypot(targetBgX, targetBgY);
     const ratio = Math.min(1.0, currentDist / MAX_OFFSET);
@@ -997,7 +1064,7 @@ if (!isMobile) {
     document.addEventListener('mousemove', e => {
         const dx = e.movementX || 0;
         const dy = e.movementY || 0;
-        addParallaxDelta(dx, -dy, 0.0006);
+        addParallaxDelta(dx, -dy, 0.00075);
     });
 }
 
@@ -1015,28 +1082,32 @@ function onGyro(e) {
 
     if (Math.abs(dg) > 60 || Math.abs(db) > 60) return;
 
-    addParallaxDelta(dg, -db, 0.0036);
+    addParallaxDelta(dg, -db, 0.0045);
 }
 
 if (window.DeviceOrientationEvent) {
     window.addEventListener('deviceorientation', onGyro);
 }
 
-const SCROLL_DURATION = 3200;
-const INTRO_DURATION = 1200;
+const SCROLL_DURATION = 3600;
+const INTRO_DURATION = 1450;
 let pageStart = performance.now();
 
 function strictAcceleratingCurve(t) {
     if (t <= 0) return 0;
     if (t >= 1) return 1;
-    const creep = t * 0.045;
-    const snap = Math.pow(t, 4.4);
-    const s = snap * snap * (3.0 - 2.0 * snap);
-    return creep * (1.0 - s) + s;
+    const p = Math.pow(t, 1.45);
+    const s = p * p * p * (p * (p * 6.0 - 15.0) + 10.0);
+    const decel = 1.0 - Math.pow(1.0 - s, 1.55);
+    const creep = t * t * (3.0 - 2.0 * t) * 0.035;
+    return creep * (1.0 - decel) + decel;
 }
 
-function easeOutCubic(t) {
-    return 1 - Math.pow(1 - t, 3);
+function smoothIntroCurve(t) {
+    if (t <= 0) return 0;
+    if (t >= 1) return 1;
+    const s = t * t * (3.0 - 2.0 * t);
+    return 1.0 - Math.pow(1.0 - s, 2.2);
 }
 
 function beginIntro() {
@@ -1118,24 +1189,23 @@ function tick(now) {
 
     targetBgX *= Math.exp(-dt * 3.8);
     targetBgY *= Math.exp(-dt * 3.8);
-    bgOffsetX += (targetBgX - bgOffsetX) * 0.12;
-    bgOffsetY += (targetBgY - bgOffsetY) * 0.12;
+    bgOffsetX += (targetBgX - bgOffsetX) * 0.15;
+    bgOffsetY += (targetBgY - bgOffsetY) * 0.15;
 
     const moveDist = Math.hypot(bgOffsetX - prevBgX, bgOffsetY - prevBgY);
     prevBgX = bgOffsetX;
     prevBgY = bgOffsetY;
     const curSpeed = moveDist / Math.max(dt, 0.001);
-    motionEnergy += (curSpeed * 0.55 - motionEnergy) * 0.2;
+    motionEnergy += (curSpeed * 0.6875 - motionEnergy) * 0.2;
     const clampedMotion = Math.min(1.0, motionEnergy);
 
     const introElapsed = Math.max(0, now - pageStart);
     const introP = Math.min(introElapsed / INTRO_DURATION, 1);
-    const introEase = easeOutCubic(introP);
+    const introEase = smoothIntroCurve(introP);
 
     const vh = Math.max(window.innerHeight, 1);
     const targetY = slide2.offsetTop || vh;
 
-    // Субпиксельный GPU-скролл во время интро без ступенчатого округления scrollTop
     if (state.autoActive && !state.autoDone) {
         if (now >= state.autoStart) {
             const elapsed = now - state.autoStart;
@@ -1171,21 +1241,20 @@ function tick(now) {
 
     vignetteOverlay.style.opacity = (1.0 - smoothScrollP * 0.78).toFixed(3);
 
-    // Однонаправленное плавное всплытие без противофазы
     const introTextY = (1 - introEase) * 22;
     const introTextBlur = (1 - introEase) * 10;
     const introArrowY = (1 - introEase) * 26;
     const introArrowBlur = (1 - introEase) * 7;
 
     if (scrollY < vh) {
-        const p = Math.min(scrollY / (vh * 0.72), 1);
+        const rawP = Math.min(scrollY / (vh * 0.76), 1);
+        const p = rawP * rawP * (3.0 - 2.0 * rawP);
         const blur = Math.pow(p, 1.35) * 14;
         const scale = 1 + p * 0.12;
         const opacity = 1 - Math.pow(p, 1.15) * 0.96;
         const tBlur = blur + introTextBlur;
         const tOp = Math.max(0, opacity) * introEase;
 
-        // Во время GPU-интро slide1 стоит на месте, поэтому двигаем сам текст мягко вверх
         const heroTranslateY = (!state.autoDone ? -scrollY * 0.34 : 0) + introTextY;
         const arrowTranslateY = (!state.autoDone ? -scrollY * 0.44 : 0) + p * 18 + introArrowY;
 
@@ -1209,8 +1278,9 @@ function tick(now) {
         heroArrowWrap.style.opacity = '0';
     }
 
-    const slide2Progress = Math.max(0, (scrollY - vh * 0.25) / (vh * 0.75));
-    const p2 = Math.min(slide2Progress, 1);
+    const slide2Progress = Math.max(0, (scrollY - vh * 0.22) / (vh * 0.78));
+    const rawP2 = Math.min(slide2Progress, 1);
+    const p2 = rawP2 * rawP2 * (3.0 - 2.0 * rawP2);
     const blur2 = (1 - p2) * 12;
     const scale2 = 0.88 + p2 * 0.12;
     const opacity2 = p2;
