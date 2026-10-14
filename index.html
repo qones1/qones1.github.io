@@ -20,7 +20,8 @@
 <link rel="canonical" href="https://hzzz.fun">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@400;500;600;700;900&display=block" rel="stylesheet">
+<link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Unbounded:wght@400;500;600;700;900&display=swap">
+<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@400;500;600;700;900&display=swap" rel="stylesheet">
 <style>
 * {
     margin: 0;
@@ -134,7 +135,7 @@ html, body {
 
 .container {
     height: 100vh;
-    scroll-snap-type: y mandatory;
+    scroll-snap-type: none;
     overflow-y: scroll;
     scroll-behavior: auto;
     position: relative;
@@ -154,6 +155,7 @@ html, body {
     perspective: 1000px;
     backface-visibility: hidden;
     -webkit-backface-visibility: hidden;
+    contain: layout style;
 }
 
 .hero {
@@ -168,7 +170,9 @@ html, body {
     pointer-events: none;
     text-transform: uppercase;
     line-height: 1.05;
-    transform: translate3d(0, 0, 0) scale3d(1.08, 1, 1);
+    opacity: 0;
+    filter: blur(10px);
+    transform: translate3d(0, 22px, 0) scale3d(1.08, 1, 1);
     backface-visibility: hidden;
     -webkit-backface-visibility: hidden;
     transform-style: preserve-3d;
@@ -194,6 +198,9 @@ html, body {
 
 .arrow-down {
     margin-top: clamp(95px, 20vh, 170px);
+    opacity: 0;
+    filter: blur(7px);
+    transform: translate3d(0, 26px, 0) scale3d(1, 1, 1);
     backface-visibility: hidden;
     -webkit-backface-visibility: hidden;
     will-change: transform, opacity, filter;
@@ -207,6 +214,9 @@ html, body {
 .links-block {
     width: min(88vw, 370px);
     font-size: clamp(12px, 3.1vw, 15px);
+    opacity: 0;
+    filter: blur(12px);
+    transform: translate3d(0, 0px, 0) scale3d(0.88, 0.88, 1);
     backface-visibility: hidden;
     -webkit-backface-visibility: hidden;
     will-change: filter, transform, opacity;
@@ -344,6 +354,8 @@ html, body {
     position: fixed;
     bottom: clamp(18px, 3vh, 36px);
     left: 50%;
+    transform: translate3d(-50%, 0, 0);
+    opacity: 0.40;
     font-size: clamp(8px, 2vw, 10px);
     font-weight: 500;
     letter-spacing: clamp(2px, 1vw, 4.5px);
@@ -484,9 +496,9 @@ function bindLinkFlash() {
                 e.preventDefault();
                 const copyData = this.getAttribute('data-copy');
                 copyToClipboard(copyData).then(() => {
-                    showToast(currentLang === 'ru' ? 'ТЕКСТ СКОПИРОВАН' : 'TEXT COPIED');
+                    showToast(currentLang === 'ru' ? 'СКОПИРОВАН' : 'COPIED');
                 }).catch(() => {
-                    showToast(currentLang === 'ru' ? 'ТЕКСТ СКОПИРОВАН' : 'TEXT COPIED');
+                    showToast(currentLang === 'ru' ? 'СКОПИРОВАН' : 'COPIED');
                 });
             }
         });
@@ -1072,8 +1084,8 @@ function addParallaxDelta(dx, dy, sens) {
     const ratio = Math.min(1.0, currentDist / MAX_OFFSET);
     const resistance = Math.max(0.03, 1.0 - Math.pow(ratio, 2.2));
 
-    targetBgX += dx * sens * resistance;
-    targetBgY += dy * sens * resistance;
+    targetBgX -= dx * sens * resistance;
+    targetBgY -= dy * sens * resistance;
 
     const newDist = Math.hypot(targetBgX, targetBgY);
     if (newDist > MAX_OFFSET) {
@@ -1106,7 +1118,19 @@ function rebuildShader() {
 }
 rebuildShader();
 
+const overlay = document.getElementById('fadeOverlay');
+const vignetteOverlay = document.getElementById('vignetteOverlay');
+const scroller = document.getElementById('scroller');
+const heroText = document.getElementById('heroText');
+const heroArrowWrap = document.getElementById('heroArrowWrap');
+const linksText = document.getElementById('linksText');
+const bottomText = document.getElementById('bottomText');
+const slide2 = document.getElementById('slide2');
+
 let width, height;
+let cachedVh = Math.max(window.innerHeight, 1);
+let cachedTargetY = cachedVh;
+
 function resize() {
     const activeDpr = baseDpr * dprScale;
     const w = Math.max(1, Math.floor(window.innerWidth * activeDpr));
@@ -1117,20 +1141,14 @@ function resize() {
     canvas.style.height = window.innerHeight + 'px';
     width = w;
     height = h;
+    cachedVh = Math.max(window.innerHeight, 1);
+    cachedTargetY = slide2 ? (slide2.offsetTop || cachedVh) : cachedVh;
 }
 window.addEventListener('resize', resize);
 resize();
 
-const overlay = document.getElementById('fadeOverlay');
-const vignetteOverlay = document.getElementById('vignetteOverlay');
-const scroller = document.getElementById('scroller');
-const heroText = document.getElementById('heroText');
-const heroArrowWrap = document.getElementById('heroArrowWrap');
-const linksText = document.getElementById('linksText');
-const bottomText = document.getElementById('bottomText');
-const slide2 = document.getElementById('slide2');
-
 const state = {
+    introStarted: false,
     autoDone: false,
     autoStart: 0,
     autoActive: false
@@ -1197,33 +1215,44 @@ function smoothIntroCurve(t) {
     return 1.0 - Math.pow(1.0 - s, 2.2);
 }
 
+function preloadAllAssets() {
+    if (!document.fonts || !document.fonts.load) {
+        return Promise.resolve();
+    }
+    const fontLoads = [
+        document.fonts.load('900 64px "Unbounded"'),
+        document.fonts.load('700 14px "Unbounded"'),
+        document.fonts.load('600 12px "Unbounded"'),
+        document.fonts.load('500 10px "Unbounded"'),
+        document.fonts.load('400 24px "Unbounded"'),
+        document.fonts.ready
+    ];
+    return Promise.race([
+        Promise.all(fontLoads),
+        new Promise(resolve => setTimeout(resolve, 2400))
+    ]);
+}
+
 function beginIntro() {
+    resize();
+    gl.finish();
     requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-            setTimeout(() => {
-                pageStart = performance.now();
-                lastTickTime = pageStart;
-                lastDowngradeTime = pageStart;
-                overlay.classList.add('hidden');
-                scroller.style.scrollSnapType = 'none';
-                state.autoStart = pageStart + 120;
-                state.autoActive = true;
-            }, 60);
+        requestAnimationFrame(startNow => {
+            pageStart = startNow;
+            lastTickTime = startNow;
+            lastDowngradeTime = startNow;
+            state.introStarted = true;
+            state.autoStart = startNow + 120;
+            state.autoActive = true;
+            overlay.classList.add('hidden');
         });
     });
 }
 
-if (document.fonts && document.fonts.ready) {
-    Promise.race([
-        document.fonts.ready,
-        new Promise(resolve => setTimeout(resolve, 450))
-    ]).then(beginIntro);
-} else {
-    beginIntro();
-}
+preloadAllAssets().then(beginIntro);
 
 function evaluatePerformance(now, rawMs) {
-    if (perfTier <= 0 || document.hidden) return;
+    if (!state.introStarted || perfTier <= 0 || document.hidden) return;
     if (now - pageStart < 1800 || now - lastDowngradeTime < 2200) return;
     if (rawMs > 200 || rawMs <= 0) {
         slowFrameStreak = 0;
@@ -1286,15 +1315,15 @@ function tick(now) {
     motionEnergy += (curSpeed * 0.6875 - motionEnergy) * 0.2;
     const clampedMotion = Math.min(1.0, motionEnergy);
 
-    const introElapsed = Math.max(0, now - pageStart);
+    const introElapsed = state.introStarted ? Math.max(0, now - pageStart) : 0;
     const introP = Math.min(introElapsed / INTRO_DURATION, 1);
     const introEase = smoothIntroCurve(introP);
 
-    const vh = Math.max(window.innerHeight, 1);
-    const targetY = slide2.offsetTop || vh;
+    const vh = cachedVh;
+    const targetY = cachedTargetY;
 
     if (state.autoActive && !state.autoDone) {
-        if (now >= state.autoStart) {
+        if (state.introStarted && now >= state.autoStart) {
             const elapsed = now - state.autoStart;
             const progress = Math.min(elapsed / SCROLL_DURATION, 1);
             const eased = strictAcceleratingCurve(progress);
@@ -1306,14 +1335,13 @@ function tick(now) {
                 slide2.style.transform = 'translate3d(0, 0px, 0)';
                 scroller.scrollTop = targetY;
                 scroller.style.scrollSnapType = 'y mandatory';
-                void scroller.offsetHeight;
             } else {
                 slide2.style.transform = `translate3d(0, ${-virtualScrollY}px, 0)`;
             }
         } else {
             virtualScrollY = 0;
         }
-    } else {
+    } else if (state.introStarted) {
         const domScroll = scroller.scrollTop;
         const smoothAlpha = 1.0 - Math.exp(-dt * 28.0);
         virtualScrollY += (domScroll - virtualScrollY) * smoothAlpha;
@@ -1375,9 +1403,6 @@ function tick(now) {
     linksText.style.filter = blur2 > 0.04 ? `blur(${blur2.toFixed(2)}px)` : 'blur(0px)';
     linksText.style.transform = `translate3d(0, 0px, 0) scale3d(${scale2.toFixed(4)}, ${scale2.toFixed(4)}, 1)`;
     linksText.style.opacity = opacity2.toFixed(4);
-
-    bottomText.style.transform = `translate3d(-50%, 0, 0)`;
-    bottomText.style.opacity = 0.40;
 
     gl.viewport(0, 0, width, height);
     const clearColors = [
