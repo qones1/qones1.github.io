@@ -8,14 +8,22 @@
 <meta name="keywords" content="hzzz, bio, links, био, ссылки, contacts, контакты, telegram, tiktok, channel, analys">
 <meta name="author" content="hzzz">
 <meta name="robots" content="index, follow">
+
+
 <meta property="og:title" content="hzzz | main">
 <meta property="og:description" content="ссылки на все">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://hzzz.fun">
 <meta property="og:site_name" content="hzzz.fun">
-<meta name="twitter:card" content="summary">
+<meta property="og:image" content="https://i.ibb.co/gFDzgHVm/Picsart-26-10-16-21-39-15-404.jpg">
+<meta property="og:image:type" content="image/jpeg">
+
+
+<meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="hzzz | main">
 <meta name="twitter:description" content="ссылки на все">
+<meta name="twitter:image" content="https://i.ibb.co/gFDzgHVm/Picsart-26-10-16-21-39-15-404.jpg">
+
 <meta name="theme-color" content="#000000">
 <link rel="canonical" href="https://hzzz.fun">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -188,7 +196,7 @@ html, body {
     pointer-events: none;
     backface-visibility: hidden;
     -webkit-backface-visibility: hidden;
-    will-change: transform, opacity, filter;
+    will-change: transform, opacity;
     display: block;
 }
 @keyframes bounce {
@@ -562,10 +570,17 @@ updateLangUI(currentLang, false);
 
 const canvas = document.getElementById('glCanvas');
 const isMobile = window.innerWidth < 768 || /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-const baseDpr = Math.min(window.devicePixelRatio || 1, isMobile ? 1.25 : 2);
 let dprScale = 1.0;
 
-const gl = canvas.getContext('webgl2', { alpha: false, antialias: false, premultipliedAlpha: false, powerPreference: 'high-performance' });
+const gl = canvas.getContext('webgl2', {
+    alpha: false,
+    antialias: false,
+    depth: false,
+    stencil: false,
+    premultipliedAlpha: false,
+    preserveDrawingBuffer: false,
+    powerPreference: 'high-performance'
+});
 if (!gl) {
     document.body.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100vh;color:#fff;font-family:sans-serif;">WebGL2 not supported</div>';
     throw new Error('WebGL2 not supported');
@@ -651,7 +666,16 @@ uniform float u_motion;
 uniform float u_scroll;
 uniform int u_tier;
 uniform float u_blobT[4];
-uniform float u_orbT[6];
+uniform vec4 u_blobs[4];
+uniform vec4 u_orbs[6];
+uniform vec4 u_stars[26];
+
+float sq(float x) { return x * x; }
+float pow3(float x) { return x * x * x; }
+float pow5(float x) { float x2 = x * x; return x2 * x2 * x; }
+float pow6(float x) { float x2 = x * x; return x2 * x2 * x2; }
+float pow7(float x) { float x2 = x * x; return x2 * x2 * x2 * x; }
+float pow9(float x) { float x2 = x * x; float x4 = x2 * x2; return x4 * x4 * x; }
 
 float hash(vec2 p) {
     vec3 p3 = fract(vec3(p.xyx) * 0.1031);
@@ -671,8 +695,9 @@ float noise(vec2 p) {
 }
 
 const vec3 blobColors[4] = ${blobC};
+const float orbMix[6] = float[](0.5, 0.981779, 0.757750, 0.156117, 0.058273, 0.607560);
 
-vec3 scene(vec2 p, float t) {
+vec3 scene(vec2 p) {
     vec3 c = ${baseC};
 
     vec2 pBlobs = p + u_offset * 1.25;
@@ -680,63 +705,48 @@ vec3 scene(vec2 p, float t) {
     vec2 pStars = p + u_offset * 0.8125;
 
     for(int i=0; i<4; i++){
-        float fi = float(i);
-        float tt = u_blobT[i];
-        vec2 pos = vec2(
-            sin(tt * 0.65 + fi * 1.7) * 0.52 + cos(tt * 0.3) * 0.18,
-            cos(tt * 0.45 + fi * 2.2) * 0.38 + sin(tt * 0.25) * 0.15
-        );
-        float dist = length(pBlobs - pos);
-        float size = (0.34 + fi * 0.05) * (1.0 + u_bass * 0.16 + u_beat * 0.08);
-        float blob = exp(-dist * dist / (size * size)) * (0.44 + u_bass * 0.18 + u_beat * 0.10);
+        vec2 d = pBlobs - u_blobs[i].xy;
+        float blob = exp(dot(d, d) * u_blobs[i].z) * u_blobs[i].w;
         c += blobColors[i] * blob;
     }
 
     for(int i=0; i<6; i++){
-        float fi = float(i);
-        float tt = u_orbT[i];
-        vec2 pos = vec2(
-            sin(tt * 0.75 + fi * 2.1) * 0.48,
-            cos(tt * 0.55 + fi * 1.4) * 0.38
-        );
-        float dist = length(pOrbs - pos);
-        float size = (0.04 + mod(fi, 3.0) * 0.012) * (1.0 + u_bass * 0.15 + u_treble * 0.25);
-        float glow = exp(-dist * dist / (size * size * 0.38)) * (0.26 + u_bass * 0.20 + u_treble * 0.25);
-        vec3 pc = mix(
-            ${glowC1},
-            ${glowC2},
-            sin(fi * 1.3) * 0.5 + 0.5
-        );
-        c += pc * glow;
+        vec2 d = pOrbs - u_orbs[i].xy;
+        float d2 = dot(d, d);
+        if (d2 < 0.28) {
+            float glow = exp(d2 * u_orbs[i].z) * u_orbs[i].w;
+            vec3 pc = mix(${glowC1}, ${glowC2}, orbMix[i]);
+            c += pc * glow;
+        }
     }
 
     int starCount = (u_tier == 0) ? 12 : 26;
+    float starGlowSum = 0.0;
     for(int i=0; i<26; i++){
         if (i >= starCount) break;
-        float fi = float(i);
-        float dirX = mod(fi, 3.0) - 1.0;
-        float dirY = mod(fi + 1.0, 3.0) - 1.0;
-        vec2 starPos = vec2(
-            mod(hash(vec2(fi, 0.0)) * 4.0 - 2.0 + (u_time * 0.015 + u_burst * 0.02) * dirX, 4.0) - 2.0,
-            mod(hash(vec2(0.0, fi)) * 4.0 - 2.0 + (u_time * 0.012 + u_burst * 0.015) * dirY, 4.0) - 2.0
-        );
-        float dist = length(pStars - starPos);
-        float twinkle = 0.5 + 0.5 * sin(u_time * 2.5 + fi * 4.0 + u_treble * 4.0);
-        float size = (0.0035 + hash(vec2(fi, fi)) * 0.006) * (1.0 + u_treble * 0.35);
-        float glow = exp(-dist * dist / (size * size * 0.18)) * (0.18 + u_treble * 0.30) * twinkle;
-        vec3 sc = ${starC};
-        c += sc * glow;
+        vec2 d = pStars - u_stars[i].xy;
+        float d2 = dot(d, d);
+        if (d2 < 0.0045) {
+            starGlowSum += exp(d2 * u_stars[i].z) * u_stars[i].w;
+        }
     }
+    c += ${starC} * starGlowSum;
 
     return c;
 }
 
-vec2 evalLensOptics(vec2 nc, vec2 aspectP, vec2 lensOff, vec2 autoDrift, float ringPos) {
-    vec2 axis1 = normalize(vec2(-0.75, 0.65) + lensOff * 1.375 + autoDrift);
-    vec2 axis2 = normalize(vec2(0.80, -0.60) - lensOff * 1.375 - autoDrift * 0.85);
-    vec2 axis3 = normalize(vec2(0.58, 0.81) + vec2(-lensOff.y, lensOff.x) * 1.25 + autoDrift * 0.72);
-    vec2 axis4 = normalize(vec2(-0.68, -0.73) - vec2(-lensOff.y, lensOff.x) * 1.15 - autoDrift * 0.64);
-
+vec2 evalLensOptics(
+    vec2 nc,
+    vec2 aspectP,
+    float ringPos,
+    vec2 axis1,
+    vec2 axis2,
+    vec2 axis3,
+    vec2 axis4,
+    vec2 g1Center,
+    vec2 g2Center,
+    vec2 g3Center
+) {
     vec2 normDir = normalize(nc + 1e-4);
     float r = length(nc);
 
@@ -745,35 +755,31 @@ vec2 evalLensOptics(vec2 nc, vec2 aspectP, vec2 lensOff, vec2 autoDrift, float r
     float ang3 = max(0.0, dot(normDir, axis3));
     float ang4 = max(0.0, dot(normDir, axis4));
 
-    float arc1 = exp(-pow((r - ringPos) * 3.4, 2.0));
-    float arc2 = exp(-pow((r - (ringPos - 0.12)) * 2.8, 2.0));
-    float arc3 = exp(-pow((r - (ringPos + 0.075)) * 4.6, 2.0));
-    float arc4 = exp(-pow((r - (ringPos - 0.24)) * 3.1, 2.0));
+    float arc1 = exp(-sq((r - ringPos) * 3.4));
+    float arc2 = exp(-sq((r - (ringPos - 0.12)) * 2.8));
+    float arc3 = exp(-sq((r - (ringPos + 0.075)) * 4.6));
+    float arc4 = exp(-sq((r - (ringPos - 0.24)) * 3.1));
 
-    float f1 = pow(ang1, 5.0) * arc1;
-    float f2 = pow(ang2, 6.0) * arc2;
-    float f3 = pow(ang3, 9.0) * arc3;
-    float f4 = pow(ang4, 7.0) * arc4;
+    float f1 = pow5(ang1) * arc1;
+    float f2 = pow6(ang2) * arc2;
+    float f3 = pow9(ang3) * arc3;
+    float f4 = pow7(ang4) * arc4;
 
     float sweepDist = abs(dot(aspectP, vec2(axis1.y, -axis1.x)) - 0.11 * sin(r * 2.4 - u_time * 0.48));
-    float anamorphic = exp(-sweepDist * 14.0) * exp(-pow((r - 0.68) * 2.5, 2.0)) * pow(ang1, 3.0);
+    float anamorphic = exp(-sweepDist * 14.0) * exp(-sq((r - 0.68) * 2.5)) * pow3(ang1);
 
     float arcs = f1 * 0.17 + f2 * 0.13 + f3 * 0.11 + f4 * 0.08 + anamorphic * 0.075;
 
-    vec2 ghostAxis = normalize(vec2(-0.72, 0.68) + lensOff * 1.45 + autoDrift * 1.15);
-    vec2 perpAxis = vec2(-ghostAxis.y, ghostAxis.x);
-
-    vec2 g1Center = ghostAxis * (0.43 + 0.04 * sin(u_time * 0.52)) + perpAxis * 0.03;
     float g1Dist = length(aspectP - g1Center);
-    float g1Ring = exp(-pow((g1Dist - 0.15) * 22.0, 2.0)) * 0.58 + smoothstep(0.16, 0.0, g1Dist) * 0.22;
+    float g1Ring = exp(-sq((g1Dist - 0.15) * 22.0)) * 0.58 + smoothstep(0.16, 0.0, g1Dist) * 0.22;
 
-    vec2 g2Center = -ghostAxis * (0.57 + 0.05 * cos(u_time * 0.44)) - perpAxis * 0.04;
     float g2Dist = length(aspectP - g2Center);
-    float g2Ring = exp(-pow((g2Dist - 0.095) * 28.0, 2.0)) * 0.62 + smoothstep(0.10, 0.0, g2Dist) * 0.28;
+    float g2Ring = exp(-sq((g2Dist - 0.095) * 28.0)) * 0.62 + smoothstep(0.10, 0.0, g2Dist) * 0.28;
 
-    vec2 g3Center = -ghostAxis * (0.27 + 0.035 * sin(u_time * 0.64)) + perpAxis * 0.025;
-    float g3Dist = length(aspectP - g3Center);
-    float g3Disc = exp(-g3Dist * g3Dist / 0.0022) * 0.52 + exp(-pow((g3Dist - 0.052) * 34.0, 2.0)) * 0.36;
+    vec2 g3Diff = aspectP - g3Center;
+    float g3Dist2 = dot(g3Diff, g3Diff);
+    float g3Dist = sqrt(g3Dist2);
+    float g3Disc = exp(-g3Dist2 / 0.0022) * 0.52 + exp(-sq((g3Dist - 0.052) * 34.0)) * 0.36;
 
     float ghosts = g1Ring * 0.11 + g2Ring * 0.09 + g3Disc * 0.085;
     return vec2(arcs, ghosts);
@@ -799,7 +805,7 @@ void main(){
     float vigEnd = mix(1.08, 1.58, u_scroll);
     float edgeBlurMask = smoothstep(vigStart, vigEnd, vigMetric);
 
-    float ca = (0.006 + edgeBlurMask * 0.026 + u_bass * 0.012 + u_motion * 0.016) * smoothstep(0.08, 1.2, length(p));
+    float ca = (0.006 + edgeBlurMask * 0.026 + u_bass * 0.012 + u_motion * 0.016) * smoothstep(0.08, 1.2, sqrt(r2));
     float blurStr = 0.012 + edgeBlurMask * mix(0.16, 0.10, u_scroll) + u_bass * 0.025 + u_motion * 0.015;
 
     vec2 ortho = vec2(-p.y, p.x) * edgeBlurMask * 0.045;
@@ -810,20 +816,20 @@ void main(){
         for(int i=0; i<4; i++){
             float fi = float(i) / 3.0 - 0.5;
             vec2 sp = p * (1.0 - abs(fi) * blurStr) + ortho * fi;
-            acc += scene(sp, t);
+            acc += scene(sp);
         }
         col = acc * 0.25;
         vec2 caShift = p * ca;
-        col.r = mix(col.r, scene(p + caShift, t).r, 0.78);
-        col.b = mix(col.b, scene(p - caShift, t).b, 0.78);
+        col.r = mix(col.r, scene(p + caShift).r, 0.78);
+        col.b = mix(col.b, scene(p - caShift).b, 0.78);
     } else if (u_tier == 1) {
         vec2 sp1 = p * (1.0 - 0.35 * blurStr) - ortho * 0.35;
         vec2 sp2 = p * (1.0 - 0.15 * blurStr) + ortho * 0.35;
-        col = (scene(sp1, t) + scene(sp2, t)) * 0.5;
+        col = (scene(sp1) + scene(sp2)) * 0.5;
         vec2 caShift = p * ca;
-        col.r = mix(col.r, scene(p + caShift, t).r, 0.72);
+        col.r = mix(col.r, scene(p + caShift).r, 0.72);
     } else {
-        col = scene(p, t);
+        col = scene(p);
     }
 
     float luma = dot(col, vec3(0.299, 0.587, 0.114));
@@ -836,7 +842,7 @@ void main(){
 
     float darkSpread = mix(0.82, 0.40, u_scroll);
     float minBright = mix(0.03, 0.36, u_scroll);
-    float softVig = exp(-pow(vigMetric * darkSpread, 2.35));
+    float softVig = exp(-pow(max(vigMetric * darkSpread, 0.0), 2.35));
     softVig = clamp(softVig, minBright, 1.0);
     col *= softVig;
 
@@ -857,9 +863,20 @@ void main(){
     float flareCA = 0.015 + parallaxRatio * 0.036 + u_motion * 0.024;
     vec2 caDir = normalize(normC + u_offset * 2.4 + 1e-4) * flareCA;
 
-    vec2 optR = evalLensOptics(normC * (1.0 - flareCA * 0.85) + caDir, cleanP * (1.0 - flareCA * 0.85) + caDir * vec2(aspect, 1.0), lensOffset, autoLensDrift, ringPos);
-    vec2 optG = evalLensOptics(normC, cleanP, lensOffset, autoLensDrift, ringPos);
-    vec2 optB = evalLensOptics(normC * (1.0 + flareCA * 0.85) - caDir, cleanP * (1.0 + flareCA * 0.85) - caDir * vec2(aspect, 1.0), lensOffset, autoLensDrift, ringPos);
+    vec2 axis1 = normalize(vec2(-0.75, 0.65) + lensOffset * 1.375 + autoLensDrift);
+    vec2 axis2 = normalize(vec2(0.80, -0.60) - lensOffset * 1.375 - autoLensDrift * 0.85);
+    vec2 axis3 = normalize(vec2(0.58, 0.81) + vec2(-lensOffset.y, lensOffset.x) * 1.25 + autoLensDrift * 0.72);
+    vec2 axis4 = normalize(vec2(-0.68, -0.73) - vec2(-lensOffset.y, lensOffset.x) * 1.15 - autoLensDrift * 0.64);
+
+    vec2 ghostAxis = normalize(vec2(-0.72, 0.68) + lensOffset * 1.45 + autoLensDrift * 1.15);
+    vec2 perpAxis = vec2(-ghostAxis.y, ghostAxis.x);
+    vec2 g1Center = ghostAxis * (0.43 + 0.04 * sin(u_time * 0.52)) + perpAxis * 0.03;
+    vec2 g2Center = -ghostAxis * (0.57 + 0.05 * cos(u_time * 0.44)) - perpAxis * 0.04;
+    vec2 g3Center = -ghostAxis * (0.27 + 0.035 * sin(u_time * 0.64)) + perpAxis * 0.025;
+
+    vec2 optR = evalLensOptics(normC * (1.0 - flareCA * 0.85) + caDir, cleanP * (1.0 - flareCA * 0.85) + caDir * vec2(aspect, 1.0), ringPos, axis1, axis2, axis3, axis4, g1Center, g2Center, g3Center);
+    vec2 optG = evalLensOptics(normC, cleanP, ringPos, axis1, axis2, axis3, axis4, g1Center, g2Center, g3Center);
+    vec2 optB = evalLensOptics(normC * (1.0 + flareCA * 0.85) - caDir, cleanP * (1.0 + flareCA * 0.85) - caDir * vec2(aspect, 1.0), ringPos, axis1, axis2, axis3, axis4, g1Center, g2Center, g3Center);
 
     float energyMod = 0.86 + u_bass * 0.42 + u_motion * 0.38 + 0.08 * sin(u_time * 1.1);
     vec3 arcChroma = vec3(optR.x, optG.x, optB.x) * energyMod;
@@ -1050,7 +1067,38 @@ const orbStates = Array.from({ length: 6 }, (_, i) =>
 );
 
 const blobTUniform = new Float32Array(4);
-const orbTUniform = new Float32Array(6);
+const blobsUniform = new Float32Array(16);
+const orbsUniform = new Float32Array(24);
+const starsUniform = new Float32Array(104);
+
+function jsFract(x) {
+    return x - Math.floor(x);
+}
+function jsMod(x, y) {
+    return x - y * Math.floor(x / y);
+}
+function jsHash2(x, y) {
+    let p3x = jsFract(x * 0.1031);
+    let p3y = jsFract(y * 0.1031);
+    let p3z = p3x;
+    const d = p3x * (p3y + 33.33) + p3y * (p3z + 33.33) + p3z * (p3x + 33.33);
+    p3x += d;
+    p3y += d;
+    p3z += d;
+    return jsFract((p3x + p3y) * p3z);
+}
+
+const STAR_SEEDS = Array.from({ length: 26 }, (_, i) => {
+    const fi = i;
+    return {
+        fi,
+        dirX: (fi % 3) - 1.0,
+        dirY: ((fi + 1) % 3) - 1.0,
+        hx: jsHash2(fi, 0.0) * 4.0 - 2.0,
+        hy: jsHash2(0.0, fi) * 4.0 - 2.0,
+        baseSize: 0.0035 + jsHash2(fi, fi) * 0.006
+    };
+});
 
 let burstVel = 0.0;
 let burstOffset = 0.0;
@@ -1065,6 +1113,7 @@ let prevBgX = 0, prevBgY = 0;
 let motionEnergy = 0;
 let smoothScrollP = 0;
 let virtualScrollY = 0;
+let cachedDomScroll = 0;
 let lastGamma = null, lastBeta = null;
 
 let perfTier = 2;
@@ -1113,7 +1162,9 @@ function rebuildShader() {
         u_scroll: gl.getUniformLocation(bgProg, 'u_scroll'),
         u_tier: gl.getUniformLocation(bgProg, 'u_tier'),
         u_blobT: gl.getUniformLocation(bgProg, 'u_blobT'),
-        u_orbT: gl.getUniformLocation(bgProg, 'u_orbT')
+        u_blobs: gl.getUniformLocation(bgProg, 'u_blobs'),
+        u_orbs: gl.getUniformLocation(bgProg, 'u_orbs'),
+        u_stars: gl.getUniformLocation(bgProg, 'u_stars')
     };
 }
 rebuildShader();
@@ -1127,12 +1178,25 @@ const linksText = document.getElementById('linksText');
 const bottomText = document.getElementById('bottomText');
 const slide2 = document.getElementById('slide2');
 
+scroller.addEventListener('scroll', () => {
+    cachedDomScroll = scroller.scrollTop;
+}, { passive: true });
+
 let width, height;
 let cachedVh = Math.max(window.innerHeight, 1);
 let cachedTargetY = cachedVh;
 
+function computeEffectiveDpr() {
+    const rawDpr = window.devicePixelRatio || 1;
+    const baseCap = isMobile ? Math.min(rawDpr, 1.25) : Math.min(rawDpr, 1.25);
+    const maxPixels = isMobile ? 750000 : 1250000;
+    const screenPixels = Math.max(1, window.innerWidth * window.innerHeight);
+    const pixelCapDpr = Math.sqrt(maxPixels / screenPixels);
+    return Math.min(baseCap, pixelCapDpr) * dprScale;
+}
+
 function resize() {
-    const activeDpr = baseDpr * dprScale;
+    const activeDpr = computeEffectiveDpr();
     const w = Math.max(1, Math.floor(window.innerWidth * activeDpr));
     const h = Math.max(1, Math.floor(window.innerHeight * activeDpr));
     canvas.width = w;
@@ -1143,6 +1207,7 @@ function resize() {
     height = h;
     cachedVh = Math.max(window.innerHeight, 1);
     cachedTargetY = slide2 ? (slide2.offsetTop || cachedVh) : cachedVh;
+    cachedDomScroll = scroller.scrollTop;
 }
 window.addEventListener('resize', resize);
 resize();
@@ -1158,7 +1223,8 @@ const stopAutoScroll = () => {
     if (state.autoActive && !state.autoDone) {
         state.autoDone = true;
         slide2.style.transform = 'translate3d(0, 0px, 0)';
-        scroller.scrollTop = Math.round(virtualScrollY);
+        cachedDomScroll = Math.round(virtualScrollY);
+        scroller.scrollTop = cachedDomScroll;
         scroller.style.scrollSnapType = 'y mandatory';
     }
 };
@@ -1170,7 +1236,7 @@ if (!isMobile) {
         const dx = e.movementX || 0;
         const dy = e.movementY || 0;
         addParallaxDelta(dx, -dy, 0.00075);
-    });
+    }, { passive: true });
 }
 
 function onGyro(e) {
@@ -1191,7 +1257,7 @@ function onGyro(e) {
 }
 
 if (window.DeviceOrientationEvent) {
-    window.addEventListener('deviceorientation', onGyro);
+    window.addEventListener('deviceorientation', onGyro, { passive: true });
 }
 
 const SCROLL_DURATION = 3600;
@@ -1235,7 +1301,7 @@ function preloadAllAssets() {
 
 function beginIntro() {
     resize();
-    gl.finish();
+    gl.flush();
     requestAnimationFrame(() => {
         requestAnimationFrame(startNow => {
             pageStart = startNow;
@@ -1276,6 +1342,26 @@ function evaluatePerformance(now, rawMs) {
     }
 }
 
+const domCache = {
+    vigOp: '',
+    hFilter: '',
+    hTrans: '',
+    hOp: '',
+    aFilter: '',
+    aTrans: '',
+    aOp: '',
+    lFilter: '',
+    lTrans: '',
+    lOp: ''
+};
+
+function setStyleCached(el, prop, key, val) {
+    if (domCache[key] !== val) {
+        domCache[key] = val;
+        el.style[prop] = val;
+    }
+}
+
 function tick(now) {
     const rawMs = now - lastTickTime;
     const dt = Math.min(Math.max(rawMs * 0.001, 0.001), 0.08);
@@ -1296,11 +1382,46 @@ function tick(now) {
 
     burstOffset += burstVel * dt;
 
+    const blobSizeMod = 1.0 + smoothBass * 0.16 + beatImpulse * 0.08;
+    const blobAmp = 0.44 + smoothBass * 0.18 + beatImpulse * 0.10;
     for (let i = 0; i < 4; i++) {
-        blobTUniform[i] = stepSegmentedSphere(blobStates[i], dt);
+        const tt = stepSegmentedSphere(blobStates[i], dt);
+        blobTUniform[i] = tt;
+        const idx = i * 4;
+        const size = (0.34 + i * 0.05) * blobSizeMod;
+        blobsUniform[idx] = Math.sin(tt * 0.65 + i * 1.7) * 0.52 + Math.cos(tt * 0.3) * 0.18;
+        blobsUniform[idx + 1] = Math.cos(tt * 0.45 + i * 2.2) * 0.38 + Math.sin(tt * 0.25) * 0.15;
+        blobsUniform[idx + 2] = -1.0 / (size * size);
+        blobsUniform[idx + 3] = blobAmp;
     }
+
+    const orbSizeMod = 1.0 + smoothBass * 0.15 + smoothTreble * 0.25;
+    const orbAmp = 0.26 + smoothBass * 0.20 + smoothTreble * 0.25;
     for (let i = 0; i < 6; i++) {
-        orbTUniform[i] = stepSegmentedSphere(orbStates[i], dt);
+        const tt = stepSegmentedSphere(orbStates[i], dt);
+        const idx = i * 4;
+        const size = (0.04 + (i % 3) * 0.012) * orbSizeMod;
+        orbsUniform[idx] = Math.sin(tt * 0.75 + i * 2.1) * 0.48;
+        orbsUniform[idx + 1] = Math.cos(tt * 0.55 + i * 1.4) * 0.38;
+        orbsUniform[idx + 2] = -1.0 / (size * size * 0.38);
+        orbsUniform[idx + 3] = orbAmp;
+    }
+
+    const starDriftX = time * 0.015 + burstOffset * 0.02;
+    const starDriftY = time * 0.012 + burstOffset * 0.015;
+    const starSizeMod = 1.0 + smoothTreble * 0.35;
+    const starBaseAmp = 0.18 + smoothTreble * 0.30;
+    const starPhaseBase = time * 2.5 + smoothTreble * 4.0;
+    const activeStars = perfTier === 0 ? 12 : 26;
+    for (let i = 0; i < activeStars; i++) {
+        const s = STAR_SEEDS[i];
+        const idx = i * 4;
+        const size = s.baseSize * starSizeMod;
+        const twinkle = 0.5 + 0.5 * Math.sin(starPhaseBase + s.fi * 4.0);
+        starsUniform[idx] = jsMod(s.hx + starDriftX * s.dirX, 4.0) - 2.0;
+        starsUniform[idx + 1] = jsMod(s.hy + starDriftY * s.dirY, 4.0) - 2.0;
+        starsUniform[idx + 2] = -1.0 / (size * size * 0.18);
+        starsUniform[idx + 3] = starBaseAmp * twinkle;
     }
 
     targetBgX *= Math.exp(-dt * 3.8);
@@ -1333,6 +1454,7 @@ function tick(now) {
                 state.autoDone = true;
                 virtualScrollY = targetY;
                 slide2.style.transform = 'translate3d(0, 0px, 0)';
+                cachedDomScroll = targetY;
                 scroller.scrollTop = targetY;
                 scroller.style.scrollSnapType = 'y mandatory';
             } else {
@@ -1342,7 +1464,7 @@ function tick(now) {
             virtualScrollY = 0;
         }
     } else if (state.introStarted) {
-        const domScroll = scroller.scrollTop;
+        const domScroll = cachedDomScroll;
         const smoothAlpha = 1.0 - Math.exp(-dt * 28.0);
         virtualScrollY += (domScroll - virtualScrollY) * smoothAlpha;
         if (Math.abs(domScroll - virtualScrollY) < 0.05) {
@@ -1354,7 +1476,7 @@ function tick(now) {
     const totalScrollRatio = Math.min(Math.max(scrollY / vh, 0), 1);
     smoothScrollP += (totalScrollRatio - smoothScrollP) * 0.14;
 
-    vignetteOverlay.style.opacity = (1.0 - smoothScrollP * 0.78).toFixed(3);
+    setStyleCached(vignetteOverlay, 'opacity', 'vigOp', (1.0 - smoothScrollP * 0.78).toFixed(3));
 
     const introTextY = (1 - introEase) * 22;
     const introTextBlur = (1 - introEase) * 10;
@@ -1373,24 +1495,24 @@ function tick(now) {
         const heroTranslateY = (!state.autoDone ? -scrollY * 0.34 : 0) + introTextY;
         const arrowTranslateY = (!state.autoDone ? -scrollY * 0.44 : 0) + p * 18 + introArrowY;
 
-        heroText.style.filter = tBlur > 0.04 ? `blur(${tBlur.toFixed(2)}px)` : 'blur(0px)';
-        heroText.style.transform = `translate3d(0, ${heroTranslateY.toFixed(2)}px, 0) scale3d(${(scale * 1.08).toFixed(4)}, ${scale.toFixed(4)}, 1)`;
-        heroText.style.opacity = tOp.toFixed(4);
+        setStyleCached(heroText, 'filter', 'hFilter', tBlur > 0.04 ? `blur(${tBlur.toFixed(2)}px)` : 'none');
+        setStyleCached(heroText, 'transform', 'hTrans', `translate3d(0, ${heroTranslateY.toFixed(2)}px, 0) scale3d(${(scale * 1.08).toFixed(4)}, ${scale.toFixed(4)}, 1)`);
+        setStyleCached(heroText, 'opacity', 'hOp', tOp.toFixed(4));
 
         const aBlur = blur * 0.85 + introArrowBlur;
         const aOp = Math.max(0, opacity) * 0.45 * introEase;
 
-        heroArrowWrap.style.filter = aBlur > 0.04 ? `blur(${aBlur.toFixed(2)}px)` : 'blur(0px)';
-        heroArrowWrap.style.transform = `translate3d(0, ${arrowTranslateY.toFixed(2)}px, 0) scale3d(${scale.toFixed(4)}, ${scale.toFixed(4)}, 1)`;
-        heroArrowWrap.style.opacity = aOp.toFixed(4);
+        setStyleCached(heroArrowWrap, 'filter', 'aFilter', aBlur > 0.04 ? `blur(${aBlur.toFixed(2)}px)` : 'none');
+        setStyleCached(heroArrowWrap, 'transform', 'aTrans', `translate3d(0, ${arrowTranslateY.toFixed(2)}px, 0) scale3d(${scale.toFixed(4)}, ${scale.toFixed(4)}, 1)`);
+        setStyleCached(heroArrowWrap, 'opacity', 'aOp', aOp.toFixed(4));
     } else {
-        heroText.style.filter = 'blur(14px)';
-        heroText.style.transform = 'translate3d(0, 0px, 0) scale3d(1.2096, 1.12, 1)';
-        heroText.style.opacity = '0';
+        setStyleCached(heroText, 'filter', 'hFilter', 'none');
+        setStyleCached(heroText, 'transform', 'hTrans', 'translate3d(0, 0px, 0) scale3d(1.2096, 1.12, 1)');
+        setStyleCached(heroText, 'opacity', 'hOp', '0');
 
-        heroArrowWrap.style.filter = 'blur(10px)';
-        heroArrowWrap.style.transform = 'translate3d(0, 20px, 0) scale3d(1.1, 1.1, 1)';
-        heroArrowWrap.style.opacity = '0';
+        setStyleCached(heroArrowWrap, 'filter', 'aFilter', 'none');
+        setStyleCached(heroArrowWrap, 'transform', 'aTrans', 'translate3d(0, 20px, 0) scale3d(1.1, 1.1, 1)');
+        setStyleCached(heroArrowWrap, 'opacity', 'aOp', '0');
     }
 
     const slide2Progress = Math.max(0, (scrollY - vh * 0.22) / (vh * 0.78));
@@ -1400,19 +1522,11 @@ function tick(now) {
     const scale2 = 0.88 + p2 * 0.12;
     const opacity2 = p2;
 
-    linksText.style.filter = blur2 > 0.04 ? `blur(${blur2.toFixed(2)}px)` : 'blur(0px)';
-    linksText.style.transform = `translate3d(0, 0px, 0) scale3d(${scale2.toFixed(4)}, ${scale2.toFixed(4)}, 1)`;
-    linksText.style.opacity = opacity2.toFixed(4);
+    setStyleCached(linksText, 'filter', 'lFilter', (blur2 > 0.04 && opacity2 > 0.001) ? `blur(${blur2.toFixed(2)}px)` : 'none');
+    setStyleCached(linksText, 'transform', 'lTrans', `translate3d(0, 0px, 0) scale3d(${scale2.toFixed(4)}, ${scale2.toFixed(4)}, 1)`);
+    setStyleCached(linksText, 'opacity', 'lOp', opacity2.toFixed(4));
 
     gl.viewport(0, 0, width, height);
-    const clearColors = [
-        [0.010, 0.004, 0.008],
-        [0.005, 0.008, 0.016],
-        [0.014, 0.004, 0.002]
-    ];
-    const cc = clearColors[currentTheme];
-    gl.clearColor(cc[0], cc[1], cc[2], 1.0);
-    gl.clear(gl.COLOR_BUFFER_BIT);
     gl.useProgram(bgProg);
     gl.uniform1f(bgLocs.u_time, time);
     gl.uniform1f(bgLocs.u_burst, burstOffset);
@@ -1425,7 +1539,9 @@ function tick(now) {
     gl.uniform1f(bgLocs.u_scroll, smoothScrollP);
     gl.uniform1i(bgLocs.u_tier, perfTier);
     gl.uniform1fv(bgLocs.u_blobT, blobTUniform);
-    gl.uniform1fv(bgLocs.u_orbT, orbTUniform);
+    gl.uniform4fv(bgLocs.u_blobs, blobsUniform);
+    gl.uniform4fv(bgLocs.u_orbs, orbsUniform);
+    gl.uniform4fv(bgLocs.u_stars, starsUniform);
     gl.bindVertexArray(quadVAO);
     gl.drawArrays(gl.TRIANGLES, 0, 6);
 
