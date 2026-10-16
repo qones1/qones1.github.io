@@ -9,7 +9,6 @@
 <meta name="author" content="hzzz">
 <meta name="robots" content="index, follow">
 
-
 <meta property="og:title" content="hzzz | main">
 <meta property="og:description" content="ссылки на все">
 <meta property="og:type" content="website">
@@ -17,7 +16,6 @@
 <meta property="og:site_name" content="hzzz.fun">
 <meta property="og:image" content="https://i.ibb.co/gFDzgHVm/Picsart-26-10-16-21-39-15-404.jpg">
 <meta property="og:image:type" content="image/jpeg">
-
 
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="hzzz | main">
@@ -145,6 +143,7 @@ html, body {
     height: 100vh;
     scroll-snap-type: none;
     overflow-y: scroll;
+    overflow-x: hidden;
     scroll-behavior: auto;
     position: relative;
     z-index: 5;
@@ -160,6 +159,7 @@ html, body {
     scroll-snap-align: start;
     flex-direction: column;
     padding: 0 24px;
+    overflow: hidden;
     perspective: 1000px;
     backface-visibility: hidden;
     -webkit-backface-visibility: hidden;
@@ -177,6 +177,7 @@ html, body {
     text-shadow: 0 0 24px rgba(255, 255, 255, 0.14), 0 0 12px rgba(255, 255, 255, 0.09);
     pointer-events: none;
     text-transform: uppercase;
+    white-space: nowrap;
     line-height: 1.05;
     opacity: 0;
     filter: blur(10px);
@@ -220,11 +221,13 @@ html, body {
 }
 
 .links-block {
-    width: min(88vw, 370px);
-    font-size: clamp(12px, 3.1vw, 15px);
+    width: 448px;
+    flex-shrink: 0;
+    font-size: 14px;
     opacity: 0;
     filter: blur(12px);
     transform: translate3d(0, 0px, 0) scale3d(0.88, 0.88, 1);
+    transform-origin: center center;
     backface-visibility: hidden;
     -webkit-backface-visibility: hidden;
     will-change: filter, transform, opacity;
@@ -271,12 +274,13 @@ html, body {
     border: none;
     outline: none;
     padding: 6px 15px;
-    font-size: clamp(9px, 2.2vw, 10.5px);
+    font-size: 10.5px;
     font-weight: 700;
     letter-spacing: 2px;
     color: rgba(215, 225, 240, 0.45);
     text-shadow: 0 0 6px rgba(215, 225, 240, 0.20);
     text-transform: uppercase;
+    white-space: nowrap;
     cursor: pointer;
     transition: color 0.3s ease, text-shadow 0.3s ease;
 }
@@ -296,11 +300,12 @@ html, body {
 }
 
 .divider {
-    font-size: clamp(9px, 2.1vw, 11px);
+    font-size: 11px;
     font-weight: 700;
     letter-spacing: 4.5px;
     color: rgba(220, 228, 242, 0.52);
     text-transform: uppercase;
+    white-space: nowrap;
     margin: 30px 0 10px 0;
     text-align: left;
     pointer-events: none;
@@ -318,16 +323,21 @@ html, body {
     display: flex;
     justify-content: space-between;
     align-items: baseline;
+    flex-wrap: nowrap;
+    white-space: nowrap;
     padding: 7px 0;
-    gap: 16px;
+    gap: 24px;
 }
 
 .link-label {
-    font-size: clamp(10.5px, 2.5vw, 12.5px);
+    font-size: 12.5px;
     font-weight: 600;
     letter-spacing: 1.8px;
     color: rgba(235, 240, 250, 0.75);
     text-transform: uppercase;
+    white-space: nowrap;
+    flex-shrink: 0;
+    text-align: left;
     pointer-events: none;
     text-shadow:
         0 0 8px rgba(235, 240, 250, 0.36),
@@ -337,10 +347,12 @@ html, body {
 .links-block a {
     color: #ffffff;
     font-weight: 700;
-    font-size: clamp(11px, 2.9vw, 14px);
+    font-size: 14px;
     letter-spacing: 0.6px;
     text-decoration: none;
     text-align: right;
+    white-space: nowrap;
+    flex-shrink: 0;
     pointer-events: auto;
     transition: color 0.25s ease, text-shadow 0.25s ease, border-color 0.25s ease;
     border-bottom: 1px solid rgba(210, 220, 235, 0.24);
@@ -423,7 +435,7 @@ const SITE_DATA = [
         category: { ru: 'ПРОЕКТЫ', en: 'PROJECTS' },
         items: [
             { ru: 'hzAPI – анализ тг акков', en: 'hzAPI – analysis tg profile', text: '@XUCXBOT', url: 'https://t.me/xucxbot', external: true },
-            { ru: 'ПЛАГИНЫ – для extera', en: 'PLUGINS – for extera', text: '@HZZZPLUGINS', url: 'https://t.me/HzzzPlugins', external: true },
+            { ru: 'ПЛАГИНЫ – для exteraGram', en: 'PLUGINS – for exteraGram', text: '@HZZZPLUGINS', url: 'https://t.me/HzzzPlugins', external: true },
             { ru: 'ОСНОВНОЙ КАНАЛ', en: 'MAIN CHANNEL', text: '@UZUQO', url: 'https://t.me/uzuqo', external: true }
         ]
     },
@@ -451,8 +463,13 @@ function detectInitialLang() {
 let currentLang = detectInitialLang();
 const langSwitchEl = document.getElementById('langSwitch');
 const linksContentEl = document.getElementById('linksContent');
+const linksText = document.getElementById('linksText');
 const toastEl = document.getElementById('toast');
 let toastTimer = null;
+
+let baseBlockWidth = 448;
+let baseBlockHeight = 340;
+let linksFitScale = 1.0;
 
 function showToast(msg) {
     if (!toastEl) return;
@@ -535,6 +552,64 @@ function renderLinks(lang) {
     bindLinkFlash();
 }
 
+function precalculateLayoutMetrics() {
+    const probe = document.createElement('div');
+    probe.className = 'links-block';
+    probe.style.cssText = 'position:fixed;top:-9999px;left:-9999px;width:max-content;opacity:0;pointer-events:none;transform:none;filter:none;visibility:hidden;';
+
+    let probeHtml = '';
+    const langs = ['ru', 'en'];
+    for (let l = 0; l < langs.length; l++) {
+        const lg = langs[l];
+        for (let i = 0; i < SITE_DATA.length; i++) {
+            const block = SITE_DATA[i];
+            const catTitle = block.category[lg] || block.category.en;
+            probeHtml += `<div class="divider">${catTitle}</div>`;
+            for (let j = 0; j < block.items.length; j++) {
+                const item = block.items[j];
+                const label = item[lg] || item.en;
+                probeHtml += `<div class="link-row"><span class="link-label">${label}</span><a href="javascript:void(0)">${item.text}</a></div>`;
+            }
+        }
+    }
+    probe.innerHTML = probeHtml;
+    document.body.appendChild(probe);
+
+    let maxRowW = 370;
+    const minGap = 38;
+    const rows = probe.querySelectorAll('.link-row');
+    for (let i = 0; i < rows.length; i++) {
+        const lbl = rows[i].querySelector('.link-label');
+        const lnk = rows[i].querySelector('a');
+        if (lbl && lnk) {
+            const w = Math.ceil(lbl.getBoundingClientRect().width + lnk.getBoundingClientRect().width + minGap);
+            if (w > maxRowW) maxRowW = w;
+        }
+    }
+
+    const divs = probe.querySelectorAll('.divider');
+    for (let i = 0; i < divs.length; i++) {
+        const dw = Math.ceil(divs[i].getBoundingClientRect().width + 24);
+        if (dw > maxRowW) maxRowW = dw;
+    }
+
+    document.body.removeChild(probe);
+
+    baseBlockWidth = maxRowW;
+    linksText.style.width = baseBlockWidth + 'px';
+    baseBlockHeight = Math.max(1, linksText.offsetHeight || 340);
+}
+
+function updateAdaptiveScale() {
+    const vw = Math.max(window.innerWidth, 1);
+    const vh = Math.max(window.innerHeight, 1);
+    const availW = vw * 0.88;
+    const availH = vh * 0.74;
+    const scaleW = availW / baseBlockWidth;
+    const scaleH = availH / baseBlockHeight;
+    linksFitScale = Math.min(1.0, scaleW, scaleH);
+}
+
 function updateLangUI(lang, animate) {
     currentLang = lang === 'ru' ? 'ru' : 'en';
     document.documentElement.lang = currentLang;
@@ -567,6 +642,8 @@ langSwitchEl.querySelectorAll('.lang-btn').forEach(btn => {
 });
 
 updateLangUI(currentLang, false);
+precalculateLayoutMetrics();
+updateAdaptiveScale();
 
 const canvas = document.getElementById('glCanvas');
 const isMobile = window.innerWidth < 768 || /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
@@ -1174,7 +1251,6 @@ const vignetteOverlay = document.getElementById('vignetteOverlay');
 const scroller = document.getElementById('scroller');
 const heroText = document.getElementById('heroText');
 const heroArrowWrap = document.getElementById('heroArrowWrap');
-const linksText = document.getElementById('linksText');
 const bottomText = document.getElementById('bottomText');
 const slide2 = document.getElementById('slide2');
 
@@ -1208,6 +1284,7 @@ function resize() {
     cachedVh = Math.max(window.innerHeight, 1);
     cachedTargetY = slide2 ? (slide2.offsetTop || cachedVh) : cachedVh;
     cachedDomScroll = scroller.scrollTop;
+    updateAdaptiveScale();
 }
 window.addEventListener('resize', resize);
 resize();
@@ -1288,7 +1365,7 @@ function preloadAllAssets() {
     const fontLoads = [
         document.fonts.load('900 64px "Unbounded"'),
         document.fonts.load('700 14px "Unbounded"'),
-        document.fonts.load('600 12px "Unbounded"'),
+        document.fonts.load('600 12.5px "Unbounded"'),
         document.fonts.load('500 10px "Unbounded"'),
         document.fonts.load('400 24px "Unbounded"'),
         document.fonts.ready
@@ -1300,6 +1377,7 @@ function preloadAllAssets() {
 }
 
 function beginIntro() {
+    precalculateLayoutMetrics();
     resize();
     gl.flush();
     requestAnimationFrame(() => {
@@ -1316,6 +1394,13 @@ function beginIntro() {
 }
 
 preloadAllAssets().then(beginIntro);
+
+if (document.fonts && document.fonts.addEventListener) {
+    document.fonts.addEventListener('loadingdone', () => {
+        precalculateLayoutMetrics();
+        updateAdaptiveScale();
+    });
+}
 
 function evaluatePerformance(now, rawMs) {
     if (!state.introStarted || perfTier <= 0 || document.hidden) return;
@@ -1519,7 +1604,7 @@ function tick(now) {
     const rawP2 = Math.min(slide2Progress, 1);
     const p2 = rawP2 * rawP2 * (3.0 - 2.0 * rawP2);
     const blur2 = (1 - p2) * 12;
-    const scale2 = 0.88 + p2 * 0.12;
+    const scale2 = (0.88 + p2 * 0.12) * linksFitScale;
     const opacity2 = p2;
 
     setStyleCached(linksText, 'filter', 'lFilter', (blur2 > 0.04 && opacity2 > 0.001) ? `blur(${blur2.toFixed(2)}px)` : 'none');
