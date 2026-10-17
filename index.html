@@ -797,10 +797,8 @@ vec3 scene(vec2 p) {
         }
     }
 
-    int starCount = (u_tier == 0) ? 12 : 26;
     float starGlowSum = 0.0;
     for(int i=0; i<26; i++){
-        if (i >= starCount) break;
         vec2 d = pStars - u_stars[i].xy;
         float d2 = dot(d, d);
         if (d2 < 0.0045) {
@@ -890,12 +888,12 @@ void main(){
     vec3 col = vec3(0.0);
     if (u_tier == 2) {
         vec3 acc = vec3(0.0);
-        for(int i=0; i<4; i++){
-            float fi = float(i) / 3.0 - 0.5;
-            vec2 sp = p * (1.0 - abs(fi) * blurStr) + ortho * fi;
+        for(int i=0; i<3; i++){
+            float fi = float(i) * 0.5 - 0.5;
+            vec2 sp = p * (1.0 - abs(fi) * blurStr * 1.3) + ortho * (fi * 1.3);
             acc += scene(sp);
         }
-        col = acc * 0.25;
+        col = acc * 0.333333;
         vec2 caShift = p * ca;
         col.r = mix(col.r, scene(p + caShift).r, 0.78);
         col.b = mix(col.b, scene(p - caShift).b, 0.78);
@@ -1264,8 +1262,8 @@ let cachedTargetY = cachedVh;
 
 function computeEffectiveDpr() {
     const rawDpr = window.devicePixelRatio || 1;
-    const baseCap = isMobile ? Math.min(rawDpr, 1.25) : Math.min(rawDpr, 1.25);
-    const maxPixels = isMobile ? 750000 : 1250000;
+    const baseCap = isMobile ? Math.min(rawDpr, 1.25) : Math.min(rawDpr, 1.0);
+    const maxPixels = isMobile ? 750000 : 800000;
     const screenPixels = Math.max(1, window.innerWidth * window.innerHeight);
     const pixelCapDpr = Math.sqrt(maxPixels / screenPixels);
     return Math.min(baseCap, pixelCapDpr) * dprScale;
@@ -1404,7 +1402,7 @@ if (document.fonts && document.fonts.addEventListener) {
 
 function evaluatePerformance(now, rawMs) {
     if (!state.introStarted || perfTier <= 0 || document.hidden) return;
-    if (now - pageStart < 1800 || now - lastDowngradeTime < 2200) return;
+    if (now - pageStart < 1200 || now - lastDowngradeTime < 1500) return;
     if (rawMs > 200 || rawMs <= 0) {
         slowFrameStreak = 0;
         return;
@@ -1412,17 +1410,17 @@ function evaluatePerformance(now, rawMs) {
 
     avgFrameMs = avgFrameMs * 0.9 + rawMs * 0.1;
 
-    if (rawMs > 25.5 && avgFrameMs > 24.5) {
+    if (rawMs > 21.0 && avgFrameMs > 19.0) {
         slowFrameStreak++;
-        if (slowFrameStreak >= 45) {
+        if (slowFrameStreak >= 15) {
             perfTier--;
             slowFrameStreak = 0;
             avgFrameMs = 16.6;
             lastDowngradeTime = now;
-            dprScale = perfTier === 1 ? 0.85 : 0.72;
+            dprScale = perfTier === 1 ? 0.85 : 0.70;
             resize();
         }
-    } else if (rawMs < 20.0) {
+    } else if (rawMs < 18.0) {
         slowFrameStreak = Math.max(0, slowFrameStreak - 2);
     }
 }
@@ -1498,15 +1496,22 @@ function tick(now) {
     const starBaseAmp = 0.18 + smoothTreble * 0.30;
     const starPhaseBase = time * 2.5 + smoothTreble * 4.0;
     const activeStars = perfTier === 0 ? 12 : 26;
-    for (let i = 0; i < activeStars; i++) {
+    for (let i = 0; i < 26; i++) {
         const s = STAR_SEEDS[i];
         const idx = i * 4;
-        const size = s.baseSize * starSizeMod;
-        const twinkle = 0.5 + 0.5 * Math.sin(starPhaseBase + s.fi * 4.0);
-        starsUniform[idx] = jsMod(s.hx + starDriftX * s.dirX, 4.0) - 2.0;
-        starsUniform[idx + 1] = jsMod(s.hy + starDriftY * s.dirY, 4.0) - 2.0;
-        starsUniform[idx + 2] = -1.0 / (size * size * 0.18);
-        starsUniform[idx + 3] = starBaseAmp * twinkle;
+        if (i < activeStars) {
+            const size = s.baseSize * starSizeMod;
+            const twinkle = 0.5 + 0.5 * Math.sin(starPhaseBase + s.fi * 4.0);
+            starsUniform[idx] = jsMod(s.hx + starDriftX * s.dirX, 4.0) - 2.0;
+            starsUniform[idx + 1] = jsMod(s.hy + starDriftY * s.dirY, 4.0) - 2.0;
+            starsUniform[idx + 2] = -1.0 / (size * size * 0.18);
+            starsUniform[idx + 3] = starBaseAmp * twinkle;
+        } else {
+            starsUniform[idx] = 999.0;
+            starsUniform[idx + 1] = 999.0;
+            starsUniform[idx + 2] = -1.0;
+            starsUniform[idx + 3] = 0.0;
+        }
     }
 
     targetBgX *= Math.exp(-dt * 3.8);
